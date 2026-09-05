@@ -103,8 +103,12 @@ window.GDriveClient = (function () {
         return resp;
     }
 
+    // Verifica a conexão e retorna o e-mail da conta conectada (usado para
+    // abrir o Drive certo quando o navegador tem mais de uma conta Google
+    // logada — ver Storage.gdriveFolderUrl).
     async function testConnection() {
-        await req('GET', `${BASE}/about?fields=user`, { okStatuses: [200] });
+        const resp = await req('GET', `${BASE}/about?fields=user(emailAddress)`, { okStatuses: [200] });
+        try { const json = await resp.json(); return (json.user && json.user.emailAddress) || null; } catch (_) { return null; }
     }
 
     function escapeQ(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }

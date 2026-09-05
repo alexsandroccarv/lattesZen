@@ -67,8 +67,19 @@ window.Storage = (function () {
     function storageMode() { return mode; }
     function persistGDriveConfig() {
         const s = loadSettings();
-        s.gdrive = { pasta: gdriveCfg.pasta, rootFolderId: gdriveCfg.rootFolderId, folderCache: gdriveCfg.folderCache };
+        s.gdrive = { pasta: gdriveCfg.pasta, rootFolderId: gdriveCfg.rootFolderId, folderCache: gdriveCfg.folderCache, email: gdriveCfg.email || null };
         saveSettings(s);
+    }
+    // E-mail da conta Google conectada, buscando e guardando em cache (na
+    // config em memória + settings) se ainda não tiver sido resolvido nesta
+    // conexão (ex.: conexões feitas antes desse recurso existir).
+    async function ensureGDriveEmail() {
+        if (gdriveCfg.email) return gdriveCfg.email;
+        try {
+            const email = await window.GDriveClient.testConnection();
+            if (email) { gdriveCfg.email = email; persistGDriveConfig(); }
+            return email;
+        } catch (_) { return null; }
     }
     // Resolve o ID da pasta correspondente a um caminho relativo à pasta raiz
     // (ex.: "Evidências/01 Dados gerais"), criando cada segmento se `create`.
@@ -99,16 +110,19 @@ window.Storage = (function () {
         if (mode !== 'gdrive' || !gdriveCfg) return null;
         try {
             const parentId = await resolveFolder(subdir, false);
-            return parentId ? `https://drive.google.com/drive/folders/${parentId}` : null;
+            if (!parentId) return null;
+            const email = await ensureGDriveEmail();
+            const base = `https://drive.google.com/drive/folders/${parentId}`;
+            return email ? `${base}?authuser=${encodeURIComponent(email)}` : base;
         } catch (_) { return null; }
     }
     async function connectGoogleDrive(cfg) {
         const pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';
         window.GDriveClient.configure(APP_CONFIG.googleDriveClientId);
         await window.GDriveClient.connectInteractive(); // abre o consentimento do Google
-        await window.GDriveClient.testConnection();
+        const email = await window.GDriveClient.testConnection();
         const rootFolderId = await window.GDriveClient.ensureFolder('root', pasta);
-        gdriveCfg = { pasta, rootFolderId, folderCache: {} };
+        gdriveCfg = { pasta, rootFolderId, folderCache: {}, email: email || null };
         mode = 'gdrive';
         persistGDriveConfig();
         return gdriveCfg;
@@ -165,7 +179,7 @@ window.Storage = (function () {
     async function restoreDirectory() {
         const s = loadSettings();
         if (s.gdrive && s.gdrive.rootFolderId) {
-            gdriveCfg = { pasta: s.gdrive.pasta, rootFolderId: s.gdrive.rootFolderId, folderCache: s.gdrive.folderCache || {} };
+            gdriveCfg = { pasta: s.gdrive.pasta, rootFolderId: s.gdrive.rootFolderId, folderCache: s.gdrive.folderCache || {}, email: s.gdrive.email || null };
             mode = 'gdrive';
             window.GDriveClient.configure(APP_CONFIG.googleDriveClientId);
             return gdriveCfg;
