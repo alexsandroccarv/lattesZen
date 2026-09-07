@@ -598,6 +598,9 @@ window.TabCatalogar = (function () {
                                 <i aria-hidden="true" class="fa-solid fa-pen text-[2em]"></i>
                                 <span aria-hidden="true" class="absolute -bottom-1.5 -right-1.5 px-1 bg-govbr-600 dark:bg-unifesp-600 text-white text-[8px] leading-[13px] rounded">URL</span>
                             </button>
+                            <button type="button" id="btnEvDrive" title="Abrir a pasta desta categoria no Google Drive" class="hidden w-12 h-12 shrink-0 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                                <i aria-hidden="true" class="fa-brands fa-google-drive text-[1.6em]"></i>
+                            </button>
                         </div>
                         <input type="file" id="pdfInput" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,application/zip,application/x-zip-compressed,application/gzip,application/x-gzip,application/x-tar" class="hidden">
                         <div id="evUrlRow" class="hidden mt-2 flex gap-1.5">
@@ -750,6 +753,8 @@ window.TabCatalogar = (function () {
             const lbl = $('#pdfInputLabel');
             if (lbl) lbl.textContent = accept === 'image/jpeg,image/png' ? 'Foto (JPEG ou PNG)'
                 : (def && def.key === 'DOCUMENTO_PESSOAL' ? 'Documento (PDF ou imagem)' : 'Evidências (PDF, imagem, vídeo, link ou zip/tar.gz)');
+            const btnDrive = $('#btnEvDrive');
+            if (btnDrive) btnDrive.classList.toggle('hidden', Storage.storageMode() !== 'gdrive');
         }
 
         // Tipo do item: caixa de seleção nativa
@@ -797,6 +802,11 @@ window.TabCatalogar = (function () {
         });
         $('#evUrlCancel').addEventListener('click', () => { $('#evUrlRow').classList.add('hidden'); $('#evUrlInput').value = ''; });
         $('#evUrlAdd').addEventListener('click', addUrlEvidence);
+        // Abrir no Google Drive: localiza a pasta da categoria atual
+        $('#btnEvDrive').addEventListener('click', () => {
+            const catKey = item ? item.categoryKey : ($('#selCategoria') ? $('#selCategoria').value : null);
+            window.AppCore.openGDriveFolder(LattesTypes.categoryFolder(catKey));
+        });
         $('#evUrlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addUrlEvidence(); } });
 
         // Marca "não salvo" a cada digitação e atualiza o rascunho automático

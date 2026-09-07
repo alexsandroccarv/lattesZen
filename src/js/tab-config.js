@@ -787,8 +787,14 @@ window.TabConfig = (function () {
         const fotoBlock = isFoto ? `
             <div>
                 <label class="block text-xs font-semibold mb-1">Imagem (JPEG ou PNG)</label>
-                <input type="file" data-perfil-foto accept="image/jpeg,image/png"
-                       class="w-full text-sm text-gray-600 dark:text-gray-300 file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
+                <div class="flex items-center gap-2">
+                    <input type="file" data-perfil-foto accept="image/jpeg,image/png"
+                           class="flex-1 text-sm text-gray-600 dark:text-gray-300 file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
+                    ${Storage.storageMode() === 'gdrive' ? `
+                    <button type="button" data-perfil-foto-drive title="Abrir a pasta desta foto no Google Drive" class="shrink-0 w-9 h-9 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                        <i aria-hidden="true" class="fa-brands fa-google-drive"></i>
+                    </button>` : ''}
+                </div>
                 <img data-perfil-foto-preview class="mt-2 max-h-40 rounded border border-gray-200 dark:border-gray-700 hidden" alt="Foto de perfil">
             </div>` : '';
         return `<details class="border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900">
@@ -1163,8 +1169,13 @@ window.TabConfig = (function () {
             if (!f) return;
             const err = window.AppCore.checkEvidenceFile(f, ['jpg', 'jpeg', 'png']);
             if (err) { toast(err, 'aviso'); e.target.value = ''; return; }
-            const prev = inp.parentElement.querySelector('[data-perfil-foto-preview]');
+            const prev = inp.parentElement.parentElement.querySelector('[data-perfil-foto-preview]');
             if (prev) { prev.src = URL.createObjectURL(f); prev.classList.remove('hidden'); }
+        }));
+        $$('[data-perfil-foto-drive]', sec).forEach(btn => btn.addEventListener('click', () => {
+            const foto = state.items.find(i => i.typeKey === 'FOTO_PERFIL');
+            const catKey = foto ? foto.categoryKey : LattesTypes.primaryCategory('FOTO_PERFIL');
+            window.AppCore.openGDriveFolder(LattesTypes.categoryFolder(catKey));
         }));
         // Carrega a foto atual (se houver) no preview
         (async () => {

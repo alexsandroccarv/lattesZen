@@ -54,6 +54,16 @@ window.AppCore = (function () {
         setTimeout(() => el.remove(), 3700);
     }
 
+    // Abre, numa nova aba, a pasta do Google Drive correspondente a um
+    // subdiretório do armazenamento (usado pelos botões "Abrir no Google
+    // Drive" nos locais onde é possível enviar arquivos). Avisa por toast se
+    // a pasta ainda não existir (nada foi enviado ali ainda).
+    async function openGDriveFolder(subdir) {
+        const url = await window.Storage.gdriveFolderUrl(subdir);
+        if (url) window.open(url, '_blank', 'noopener');
+        else toast('Pasta ainda não existe no Google Drive — envie um arquivo primeiro.', 'aviso');
+    }
+
     // Extrai o ANO de um campo de data completa (dd/mm/aaaa, mm/aaaa ou aaaa).
     // Usado em toda parte que precisa só do ano (dedup, ordenação, RSC) — o
     // valor guardado pode ter dia/mês, mas eles nunca vão para o XML Lattes.
@@ -269,7 +279,7 @@ window.AppCore = (function () {
     }
 
     return {
-        state, $, $$, esc, toast, anoDe, isImageExt, isVideoExt, isArchiveExt, NA_VALUE, itemYear, sortByYear, publicarWebOk,
+        state, $, $$, esc, toast, openGDriveFolder, anoDe, isImageExt, isVideoExt, isArchiveExt, NA_VALUE, itemYear, sortByYear, publicarWebOk,
         elegivelAoLattes, itemsUsingValue, normNome,
         validateISSN, validateISBN, validateISBNorISSN, validateDOI, validateURL, validateField,
         setFieldError, associateLabels, isFieldDisabled, evCount, descState,
