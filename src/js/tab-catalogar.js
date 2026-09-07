@@ -624,8 +624,9 @@ window.TabCatalogar = (function () {
                                 <i aria-hidden="true" class="fa-solid fa-pen text-[2em]"></i>
                                 <span aria-hidden="true" class="absolute -bottom-1.5 -right-1.5 px-1 bg-govbr-600 dark:bg-unifesp-600 text-white text-[8px] leading-[13px] rounded">URL</span>
                             </button>
-                            <button type="button" id="btnEvDrive" title="Selecionar um arquivo já existente no Google Drive" class="hidden w-12 h-12 shrink-0 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center disabled:opacity-40">
+                            <button type="button" id="btnEvDrive" title="Selecionar um arquivo já existente no Google Drive" class="hidden relative w-12 h-12 shrink-0 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center disabled:opacity-40">
                                 <i aria-hidden="true" class="fa-brands fa-google-drive text-[1.6em]"></i>
+                                <i aria-hidden="true" class="fa-solid fa-plus absolute -bottom-1 -right-1 w-3.5 h-3.5 text-[9px] leading-[14px] bg-govbr-600 dark:bg-unifesp-600 text-white rounded-full text-center"></i>
                             </button>
                         </div>
                         <input type="file" id="pdfInput" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska,application/zip,application/x-zip-compressed,application/gzip,application/x-gzip,application/x-tar" class="hidden">
