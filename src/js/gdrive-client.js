@@ -274,9 +274,15 @@ window.GDriveClient = (function () {
         await loadPickerLib();
         return new Promise((resolve, reject) => {
             try {
+                // setIncludeFolders(true): mostra as pastas na listagem, dá pra
+                // clicar/entrar nelas (navegação por diretórios, com breadcrumb),
+                // igual à interface completa do Drive — mas setSelectFolderEnabled
+                // continua false: só um ARQUIVO pode ser o resultado final,
+                // pastas servem só pra navegar até ele.
                 const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
-                    .setIncludeFolders(false)
-                    .setSelectFolderEnabled(false);
+                    .setIncludeFolders(true)
+                    .setSelectFolderEnabled(false)
+                    .setParent('root');
                 const picker = new window.google.picker.PickerBuilder()
                     .addView(view)
                     .setOAuthToken(accessToken)
