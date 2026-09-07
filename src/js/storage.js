@@ -103,18 +103,42 @@ window.Storage = (function () {
         persistGDriveConfig();
         return parentId;
     }
-    // URL da pasta no Google Drive que guarda os arquivos de um subdiretório
-    // (null fora do modo Google Drive, ou se a pasta ainda não existir — ou
-    // seja, nada foi enviado ali ainda). Não cria a pasta, só localiza.
+    // Localiza a pasta MAIS PROFUNDA que já existe na cadeia de um
+    // subdiretório, sem criar nada — ex.: se "Evidências/Formação" ainda não
+    // existe (nenhum arquivo enviado ali) mas "Evidências" existe, retorna o
+    // ID de "Evidências" (exact: false). Sempre resolve a algo — na pior das
+    // hipóteses, a própria pasta raiz do lattesZen no Drive (exact: true
+    // quando path vazio). Erros de rede/autenticação SOBEM pro chamador (não
+    // são confundidos com "pasta não existe").
+    async function resolveDeepestExistingFolder(path) {
+        if (!path) return { id: gdriveCfg.rootFolderId, exact: true };
+        const cache = gdriveCfg.folderCache;
+        if (cache[path]) return { id: cache[path], exact: true };
+        const segs = String(path).split('/').filter(Boolean);
+        let parentId = gdriveCfg.rootFolderId;
+        let acumulado = '';
+        for (const seg of segs) {
+            acumulado = acumulado ? `${acumulado}/${seg}` : seg;
+            if (cache[acumulado]) { parentId = cache[acumulado]; continue; }
+            const id = await window.GDriveClient.findFolder(parentId, seg);
+            if (!id) return { id: parentId, exact: false };
+            cache[acumulado] = id;
+            parentId = id;
+        }
+        persistGDriveConfig();
+        return { id: parentId, exact: true };
+    }
+    // URL da pasta no Google Drive de um subdiretório — a pasta exata se já
+    // existir, ou a pasta ancestral mais próxima que existir (sempre abre em
+    // algum lugar do Drive; nunca falha por "pasta não existe" sozinho).
+    // Retorna null só fora do modo Google Drive. Erros de rede/autenticação
+    // sobem pro chamador — ver AppCore.openGDriveFolder.
     async function gdriveFolderUrl(subdir) {
         if (mode !== 'gdrive' || !gdriveCfg) return null;
-        try {
-            const parentId = await resolveFolder(subdir, false);
-            if (!parentId) return null;
-            const email = await ensureGDriveEmail();
-            const base = `https://drive.google.com/drive/folders/${parentId}`;
-            return email ? `${base}?authuser=${encodeURIComponent(email)}` : base;
-        } catch (_) { return null; }
+        const { id: parentId, exact } = await resolveDeepestExistingFolder(subdir);
+        const email = await ensureGDriveEmail();
+        const base = `https://drive.google.com/drive/folders/${parentId}`;
+        return { url: email ? `${base}?authuser=${encodeURIComponent(email)}` : base, exact };
     }
     async function connectGoogleDrive(cfg) {
         const pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';

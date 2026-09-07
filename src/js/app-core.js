@@ -56,12 +56,18 @@ window.AppCore = (function () {
 
     // Abre, numa nova aba, a pasta do Google Drive correspondente a um
     // subdiretório do armazenamento (usado pelos botões "Abrir no Google
-    // Drive" nos locais onde é possível enviar arquivos). Avisa por toast se
-    // a pasta ainda não existir (nada foi enviado ali ainda).
+    // Drive" nos locais onde é possível enviar arquivos). Se a subpasta exata
+    // ainda não existir (nada enviado ali ainda), abre a pasta ancestral mais
+    // próxima que já existir — sempre leva a algum lugar do Drive. Falhas de
+    // rede/autenticação (token expirado etc.) mostram o erro real, em vez de
+    // serem confundidas com "pasta não existe".
     async function openGDriveFolder(subdir) {
-        const url = await window.Storage.gdriveFolderUrl(subdir);
-        if (url) window.open(url, '_blank', 'noopener');
-        else toast('Pasta ainda não existe no Google Drive — envie um arquivo primeiro.', 'aviso');
+        let res;
+        try { res = await window.Storage.gdriveFolderUrl(subdir); }
+        catch (e) { toast('Falha ao conectar ao Google Drive: ' + e.message, 'erro'); return; }
+        if (!res) { toast('Conecte o Google Drive em Configurações antes de usar este botão.', 'aviso'); return; }
+        window.open(res.url, '_blank', 'noopener');
+        if (!res.exact) toast('Abrindo a pasta mais próxima já existente — nenhum arquivo foi enviado aqui ainda.', 'info');
     }
 
     // Extrai o ANO de um campo de data completa (dd/mm/aaaa, mm/aaaa ou aaaa).

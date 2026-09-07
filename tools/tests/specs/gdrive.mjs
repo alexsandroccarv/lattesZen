@@ -284,6 +284,47 @@ test('writeJson + scanDirectory fazem round-trip via Google Drive', async ({ pag
     assertEqual(items[0].titulo, 'Item gravado via Google Drive', 'O item reconstruído deveria ter os mesmos campos gravados');
 });
 
+// Regressão: o botão "Abrir no Google Drive" (Catalogar/Configurações) usava
+// gdriveFolderUrl(subdir), que retornava null sempre que a subpasta exata
+// ainda não existia (nenhum arquivo enviado ali) OU quando qualquer erro de
+// rede/autenticação acontecia — os dois casos viravam o mesmo aviso enganoso
+// "pasta ainda não existe". Agora: sem subpasta exata, cai pra pasta
+// ancestral mais próxima (sempre abre em algum lugar do Drive); erros reais
+// sobem como exceção pro chamador, sem virar esse aviso.
+test('gdriveFolderUrl: cai pra pasta ancestral mais próxima antes do primeiro envio, e passa a apontar pra subpasta exata depois', async ({ page, baseUrl }) => {
+    const mock = createMockDrive();
+    await mock.install(page);
+    await mockGis(page);
+    await abrirConfig(page, baseUrl);
+    await conectar(page, 'lattesZen');
+
+    const antes = await page.evaluate(() => window.Storage.gdriveFolderUrl('Produções'));
+    assert(antes && antes.url, 'Deveria retornar uma URL mesmo sem a subpasta "Produções" existir ainda');
+    assertEqual(antes.exact, false, 'Sem nenhum envio em "Produções", exact deveria ser false (a URL aponta pra pasta raiz)');
+    assert(/\/drive\/folders\//.test(antes.url), 'A URL deveria apontar pra uma pasta do Drive');
+    assert(/authuser=usuaria%40example\.com/.test(antes.url), 'A URL deveria indicar a conta conectada via authuser');
+
+    await page.evaluate(async () => { await window.Storage.writeJson('it-drive-url', { id: 'it-drive-url' }, 'Produções'); });
+    const depois = await page.evaluate(() => window.Storage.gdriveFolderUrl('Produções'));
+    assertEqual(depois.exact, true, 'Depois do 1º envio em "Produções", exact deveria ser true (a subpasta já existe)');
+    assert(depois.url !== antes.url, 'A URL deveria mudar — agora aponta pra subpasta "Produções", não mais pra raiz');
+});
+
+test('gdriveFolderUrl: erro de autenticação sobe como exceção, não vira "pasta não existe"', async ({ page, baseUrl }) => {
+    const mock = createMockDrive();
+    await mock.install(page);
+    await mockGis(page);
+    await abrirConfig(page, baseUrl);
+    await conectar(page, 'lattesZen');
+
+    mock.setForbidden(true);
+    const erro = await page.evaluate(async () => {
+        try { await window.Storage.gdriveFolderUrl('Produções'); return null; }
+        catch (e) { return e.message || 'erro sem mensagem'; }
+    });
+    assert(erro, 'Um token recusado (401) deveria lançar uma exceção, não retornar silenciosamente null/undefined');
+});
+
 test('deleteItemFiles remove os arquivos do item no Google Drive', async ({ page, baseUrl }) => {
     const mock = createMockDrive();
     await mock.install(page);
