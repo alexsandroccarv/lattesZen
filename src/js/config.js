@@ -60,11 +60,17 @@ window.APP_CONFIG = {
     //   4. (Recomendado) Clique na chave gerada → em "Restrições de API",
     //      escolha "Restringir chave" e selecione só a "Google Picker API"; em
     //      "Restrições de aplicativo", escolha "Referenciadores HTTP" e
-    //      adicione o domínio onde o lattesZen está publicado (ex.:
-    //      https://seusite.com/*) — evita que a chave seja usada em outro site.
+    //      adicione o domínio onde o lattesZen está publicado — CUIDADO:
+    //      "*.seusite.com/*" cobre só SUBdomínios (www., app. etc.), NÃO o
+    //      domínio nu; se o app está direto em "https://seusite.com/caminho/"
+    //      (sem subdomínio), adicione TAMBÉM "seusite.com/*" (sem o "*."), ou
+    //      a chave dá erro "The API developer key is invalid" nesse domínio.
     //   5. Copie a chave gerada e cole abaixo.
     // Enquanto ficar vazio, o botão de selecionar arquivo do Drive aparece
     // desabilitado com um aviso, em vez de quebrar.
+    // lattesZen publicado em https://ccarvalho.net/labs/latteszen/ (domínio
+    // nu, sem subdomínio) — a restrição da chave abaixo precisa incluir
+    // "ccarvalho.net/*", não só "*.ccarvalho.net/*".
     googlePickerApiKey: (typeof window !== 'undefined' && window.__LZ_TEST_GDRIVE_PICKER_API_KEY) || 'AIzaSyCwPXOq6I5CT06q-aXDaU7MAwrAp4-3zPs',
     // Google Analytics (GA4) — opcional, desligado por padrão. Passo a passo
     // pra gerar o seu ID de mensuração:
