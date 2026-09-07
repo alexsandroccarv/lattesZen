@@ -7,7 +7,7 @@ window.APP_CONFIG = {
     // Os dois primeiros números são atualizados manualmente; o terceiro (2
     // dígitos) é incrementado a cada issue fechada no GitHub — ver política
     // completa em CLAUDE.md e o histórico em notas-de-versao.html.
-    version: 'v0.7.05',
+    version: 'v0.7.06',
     lastModified: '07/09/2026',
     author: {
         nome: 'Alexsandro Cardoso Carvalho',
@@ -47,6 +47,25 @@ window.APP_CONFIG = {
     // Enquanto ficar vazio, a seção "Google Drive" em Configurações aparece
     // desabilitada com um aviso, em vez de quebrar.
     googleDriveClientId: (typeof window !== 'undefined' && window.__LZ_TEST_GDRIVE_CLIENT_ID) || '653369043379-2mrkj5f2le78r11v5np9eev9i0k5hm5v.apps.googleusercontent.com',
+    // Chave de API do Google (Google Picker API) — usada só pelo botão
+    // "Selecionar arquivo do Google Drive" (anexar evidência já existente no
+    // Drive do usuário, em vez de enviar do computador). É uma credencial
+    // DIFERENTE do Client ID OAuth acima — o Picker é uma biblioteca à parte
+    // do Google e exige as duas. Não é segredo (assim como o Client ID, pode
+    // ficar aqui). Passo a passo pra gerar a sua:
+    //   1. https://console.cloud.google.com/ → mesmo projeto usado pro Client
+    //      ID OAuth acima (ou outro, se preferir).
+    //   2. "APIs e serviços" → "Biblioteca" → habilite a "Google Picker API".
+    //   3. "APIs e serviços" → "Credenciais" → "Criar credenciais" → "Chave de API".
+    //   4. (Recomendado) Clique na chave gerada → em "Restrições de API",
+    //      escolha "Restringir chave" e selecione só a "Google Picker API"; em
+    //      "Restrições de aplicativo", escolha "Referenciadores HTTP" e
+    //      adicione o domínio onde o lattesZen está publicado (ex.:
+    //      https://seusite.com/*) — evita que a chave seja usada em outro site.
+    //   5. Copie a chave gerada e cole abaixo.
+    // Enquanto ficar vazio, o botão de selecionar arquivo do Drive aparece
+    // desabilitado com um aviso, em vez de quebrar.
+    googlePickerApiKey: (typeof window !== 'undefined' && window.__LZ_TEST_GDRIVE_PICKER_API_KEY) || 'AIzaSyCwPXOq6I5CT06q-aXDaU7MAwrAp4-3zPs',
     // Google Analytics (GA4) — opcional, desligado por padrão. Passo a passo
     // pra gerar o seu ID de mensuração:
     //   1. https://analytics.google.com/ → Administrador → "Criar propriedade".

@@ -140,6 +140,33 @@ window.Storage = (function () {
         const base = `https://drive.google.com/drive/folders/${parentId}`;
         return { url: email ? `${base}?authuser=${encodeURIComponent(email)}` : base, exact };
     }
+    // Abre o seletor de arquivos do Google (Picker) pra anexar, como
+    // evidência, um arquivo já existente no Drive do usuário (em vez de
+    // enviar do computador). Baixa o conteúdo na hora (fica pronto pra
+    // entrar no mesmo fluxo de evidências que um arquivo local) e informa se
+    // o arquivo escolhido já estava dentro da pasta do lattesZen no Drive —
+    // nesse caso, o chamador deve apagar o original depois de gravar a cópia
+    // com o nome/pasta corretos (efeito de "mover"); se estava fora, o
+    // original fica intocado (efeito de "copiar"). Retorna null se o usuário
+    // cancelar o seletor.
+    async function pickDriveEvidenceFile() {
+        if (mode !== 'gdrive' || !gdriveCfg) throw new Error('Conecte o Google Drive antes de usar este recurso.');
+        const picked = await window.GDriveClient.pickFile(APP_CONFIG.googlePickerApiKey);
+        if (!picked) return null;
+        const driveSourceInside = await window.GDriveClient.isDescendantOf(picked.id, gdriveCfg.rootFolderId);
+        const blob = await window.GDriveClient.getFileContent(picked.id);
+        if (!blob) throw new Error('Não foi possível baixar o conteúdo do arquivo selecionado.');
+        const file = new File([blob], picked.name, { type: blob.type || picked.mimeType || 'application/octet-stream' });
+        return { file, driveSourceId: picked.id, driveSourceInside };
+    }
+    // Completa o efeito de "mover" após pickDriveEvidenceFile(): apaga o
+    // arquivo original no Drive (só deveria ser chamado depois que a cópia já
+    // foi gravada com sucesso no lugar certo). Silencioso em caso de falha —
+    // o pior cenário é uma sobra no Drive, não um dado perdido.
+    async function deleteDriveFileById(fileId) {
+        if (mode !== 'gdrive') return;
+        try { await window.GDriveClient.deleteFile(fileId); } catch (_) {}
+    }
     async function connectGoogleDrive(cfg) {
         const pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';
         window.GDriveClient.configure(APP_CONFIG.googleDriveClientId);
@@ -772,6 +799,7 @@ window.Storage = (function () {
         directoryName, forgetDirectory, verifyPermission, checkHealth,
         // Google Drive
         storageMode, connectGoogleDrive, migrateLocalToGoogleDrive, gdriveFolderUrl,
+        pickDriveEvidenceFile, deleteDriveFileById,
         // arquivos
         writeJson, writeFile, writeAttachment, deleteEntry, deleteItemFiles, moveItemFiles, removeSubdirIfEmpty, renameRootFolder, renameNestedFolder, readAttachmentUrl, readAttachmentFile, scanDirectory, ensureSubdirs,
         // bandeja de entrada (inbox)

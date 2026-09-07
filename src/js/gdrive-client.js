@@ -225,10 +225,82 @@ window.GDriveClient = (function () {
         await req('PATCH', url, { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: newName }), okStatuses: [200] });
     }
 
+    // Pais diretos de um arquivo/pasta (null se não existir mais).
+    async function getFileParents(fileId) {
+        const resp = await req('GET', `${BASE}/files/${fileId}?fields=parents`, { okStatuses: [200, 404] });
+        if (resp.status === 404) return null;
+        return (await resp.json()).parents || [];
+    }
+    // Verifica se `fileId` está dentro da árvore de `ancestorId` (a própria
+    // pasta, ou uma subpasta dela, a qualquer profundidade) — sobe pela
+    // cadeia de pais até achar o ancestral ou chegar ao topo do Drive
+    // (limite de segurança contra ciclo/erro: 30 níveis, bem mais que
+    // qualquer estrutura de pastas real do app).
+    async function isDescendantOf(fileId, ancestorId) {
+        let current = fileId;
+        for (let i = 0; i < 30; i++) {
+            const parents = await getFileParents(current);
+            if (!parents || !parents.length) return false;
+            if (parents.includes(ancestorId)) return true;
+            current = parents[0];
+        }
+        return false;
+    }
+
+    // Carrega a biblioteca do Google Picker (separada da GIS de autenticação
+    // acima) — só quando o botão de selecionar arquivo do Drive for usado.
+    function loadPickerLib() {
+        return new Promise((resolve, reject) => {
+            if (window.google && window.google.picker) { resolve(); return; }
+            const finish = () => {
+                if (!window.gapi) { reject(new Error('Não foi possível carregar o seletor de arquivos do Google.')); return; }
+                window.gapi.load('picker', { callback: resolve, onerror: () => reject(new Error('Não foi possível carregar o seletor de arquivos do Google.')) });
+            };
+            if (window.gapi) { finish(); return; }
+            const script = document.createElement('script');
+            script.src = 'https://apis.google.com/js/api.js';
+            script.async = true;
+            script.onload = finish;
+            script.onerror = () => reject(new Error('Não foi possível carregar o script do seletor de arquivos do Google — verifique sua conexão.'));
+            document.head.appendChild(script);
+        });
+    }
+    // Abre o seletor de arquivos do Google Drive (Picker) — o usuário navega
+    // o PRÓPRIO Drive e escolhe um arquivo já existente. Retorna
+    // {id, name, mimeType} do arquivo escolhido, ou null se cancelado.
+    async function pickFile(developerKey) {
+        if (!developerKey) throw new Error('Chave de API do Google (Picker) não configurada neste site.');
+        await ensureFreshToken();
+        await loadPickerLib();
+        return new Promise((resolve, reject) => {
+            try {
+                const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
+                    .setIncludeFolders(false)
+                    .setSelectFolderEnabled(false);
+                const picker = new window.google.picker.PickerBuilder()
+                    .addView(view)
+                    .setOAuthToken(accessToken)
+                    .setDeveloperKey(developerKey)
+                    .setCallback((data) => {
+                        const Action = window.google.picker.Action;
+                        if (data.action === Action.PICKED) {
+                            const doc = data.docs[0];
+                            resolve({ id: doc.id, name: doc.name, mimeType: doc.mimeType });
+                        } else if (data.action === Action.CANCEL) {
+                            resolve(null);
+                        }
+                    })
+                    .build();
+                picker.setVisible(true);
+            } catch (e) { reject(e); }
+        });
+    }
+
     return {
         configure, isConfigured, isConnected, connectInteractive, connectSilent, disconnect, testConnection,
         findFolder, findFile, createFolder, ensureFolder, listChildren,
         createFile, updateFileContent, upsertFile, getFileContent, deleteFile, removeFileIfExists,
         renameFile, moveFile, moveAndRename,
+        getFileParents, isDescendantOf, pickFile,
     };
 })();

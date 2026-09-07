@@ -269,6 +269,32 @@ window.TabCatalogar = (function () {
         previewPdfFile(file);
     }
 
+    // Anexa, como evidência, um arquivo já existente no Google Drive do
+    // usuário (selecionado no Picker) — em vez de enviar do computador. Se o
+    // arquivo escolhido já estiver dentro da pasta do lattesZen no Drive, é
+    // MOVIDO pra pasta certa ao salvar (o original é apagado depois de a
+    // cópia com o nome correto ser gravada); se estiver fora, é COPIADO (o
+    // original no Drive fica intocado) — ver o laço de gravação em
+    // onSubmitForm() (busca por "driveSourceInside").
+    async function addDriveEvidence() {
+        const inp = $('#pdfInput');
+        const allowed = window.AppCore.allowedExtsForAccept(inp ? inp.accept : '');
+        let picked;
+        try { picked = await Storage.pickDriveEvidenceFile(); }
+        catch (e) { toast('Falha ao selecionar arquivo do Google Drive: ' + e.message, 'erro'); return; }
+        if (!picked) return; // cancelado no seletor
+        const err = window.AppCore.checkEvidenceFile(picked.file, allowed);
+        if (err) { toast(err, 'aviso'); return; }
+        state.evEditing.push({
+            basename: null, ext: window.AppCore.fileExt(picked.file), name: picked.file.name,
+            publica: state.evEditing.length === 0, tag: '', file: picked.file,
+            driveSourceId: picked.driveSourceId, driveSourceInside: picked.driveSourceInside,
+        });
+        state.formDirty = true;
+        renderEvList();
+        previewPdfFile(picked.file);
+    }
+
     // Bandeja de entrada: botão com um badge de contagem (sem listar os
     // arquivos). Clicar no botão anexa o próximo arquivo pendente ainda não
     // usado neste item.
@@ -598,7 +624,7 @@ window.TabCatalogar = (function () {
                                 <i aria-hidden="true" class="fa-solid fa-pen text-[2em]"></i>
                                 <span aria-hidden="true" class="absolute -bottom-1.5 -right-1.5 px-1 bg-govbr-600 dark:bg-unifesp-600 text-white text-[8px] leading-[13px] rounded">URL</span>
                             </button>
-                            <button type="button" id="btnEvDrive" title="Abrir a pasta desta categoria no Google Drive" class="hidden w-12 h-12 shrink-0 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center">
+                            <button type="button" id="btnEvDrive" title="Selecionar um arquivo já existente no Google Drive" class="hidden w-12 h-12 shrink-0 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center disabled:opacity-40">
                                 <i aria-hidden="true" class="fa-brands fa-google-drive text-[1.6em]"></i>
                             </button>
                         </div>
@@ -754,7 +780,14 @@ window.TabCatalogar = (function () {
             if (lbl) lbl.textContent = accept === 'image/jpeg,image/png' ? 'Foto (JPEG ou PNG)'
                 : (def && def.key === 'DOCUMENTO_PESSOAL' ? 'Documento (PDF ou imagem)' : 'Evidências (PDF, imagem, vídeo, link ou zip/tar.gz)');
             const btnDrive = $('#btnEvDrive');
-            if (btnDrive) btnDrive.classList.toggle('hidden', Storage.storageMode() !== 'gdrive');
+            if (btnDrive) {
+                btnDrive.classList.toggle('hidden', Storage.storageMode() !== 'gdrive');
+                const semChave = !APP_CONFIG.googlePickerApiKey;
+                btnDrive.disabled = semChave;
+                btnDrive.title = semChave
+                    ? 'Recurso ainda não configurado neste site (falta a Chave de API do Picker em config.js)'
+                    : 'Selecionar um arquivo já existente no Google Drive';
+            }
         }
 
         // Tipo do item: caixa de seleção nativa
@@ -802,11 +835,8 @@ window.TabCatalogar = (function () {
         });
         $('#evUrlCancel').addEventListener('click', () => { $('#evUrlRow').classList.add('hidden'); $('#evUrlInput').value = ''; });
         $('#evUrlAdd').addEventListener('click', addUrlEvidence);
-        // Abrir no Google Drive: localiza a pasta da categoria atual
-        $('#btnEvDrive').addEventListener('click', () => {
-            const catKey = item ? item.categoryKey : ($('#selCategoria') ? $('#selCategoria').value : null);
-            window.AppCore.openGDriveFolder(LattesTypes.categoryFolder(catKey));
-        });
+        // Selecionar arquivo do Google Drive: abre o Picker do Google
+        $('#btnEvDrive').addEventListener('click', addDriveEvidence);
         $('#evUrlInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addUrlEvidence(); } });
 
         // Marca "não salvo" a cada digitação e atualiza o rascunho automático
@@ -1665,6 +1695,11 @@ window.TabCatalogar = (function () {
                 catch (e) { toast('Falha ao gravar evidência "' + ev.name + '": ' + e.message, 'aviso'); continue; }
                 evOut.push({ basename, ext: ev.ext, name: ev.name, publica: !!ev.publica, tag: ev.tag || '' });
                 if (ev.inboxName) fromInbox.add(ev.inboxName);   // veio da bandeja de entrada
+                // Veio do Picker do Google Drive e já estava dentro da pasta do
+                // lattesZen: a cópia certa já foi gravada acima — apaga o
+                // original pra completar o efeito de "mover" (fora da pasta do
+                // app, o original nunca é tocado — fica só copiado).
+                if (ev.driveSourceInside && ev.driveSourceId) await Storage.deleteDriveFileById(ev.driveSourceId);
             } else {
                 evOut.push({ basename: ev.basename, ext: ev.ext, name: ev.name, publica: !!ev.publica, tag: ev.tag || '' });
             }
