@@ -144,7 +144,7 @@
         <p class="lead">Como o lattesZen trata (ou, principalmente, <em>não</em> trata) os seus dados pessoais — em conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).</p>
 
         <div class="ok">
-          <strong>Resumo em uma frase:</strong> o lattesZen <strong>não tem servidor</strong>. Tudo o que você cadastra fica no seu navegador e, se você configurar, numa pasta do seu próprio computador — nada é enviado para nós.
+          <strong>Resumo em uma frase:</strong> o lattesZen <strong>não tem servidor próprio</strong>. Tudo o que você cadastra fica no seu navegador e, por padrão, numa pasta do seu computador — nada é enviado para nós. Se você optar por conectar ao Google Drive (recurso opcional, ver seção 4), os arquivos passam a ser gravados lá, direto do seu navegador para o Google — nunca por um servidor do lattesZen.
         </div>
 
         <nav class="toc">
@@ -175,9 +175,10 @@
           <p>O lattesZen é um <strong>aplicativo que roda inteiramente no seu navegador</strong> (client-side). Não existe um servidor, backend, banco de dados remoto ou API própria para onde as informações do seu currículo sejam enviadas — não há, inclusive, <strong>cadastro, login ou senha</strong> de nenhum tipo.</p>
           <ul>
             <li>O <strong>índice do catálogo</strong> (os itens que você cadastra) e suas <strong>preferências</strong> (tema, alto contraste, tamanho de fonte) ficam salvos no <code>localStorage</code> do seu navegador, associado a este site.</li>
-            <li>Se o seu navegador suportar (Chrome/Edge) e você <strong>escolher uma pasta</strong> em Configurações, os arquivos de cada item (PDF + metadados) e as demais pastas do currículo (evidências, backup, exportação, publicação) são lidos e gravados <strong>diretamente no seu computador</strong>, sem passar por nenhum servidor intermediário.</li>
+            <li><strong>Por padrão</strong>, se o seu navegador suportar (Chrome/Edge) e você <strong>escolher uma pasta</strong> em Configurações, os arquivos de cada item (PDF + metadados) e as demais pastas do currículo (evidências, backup, exportação, publicação) são lidos e gravados <strong>diretamente no seu computador</strong>, sem passar por nenhum servidor intermediário.</li>
+            <li><strong>Opcionalmente</strong>, em vez de uma pasta local, você pode conectar uma conta do <strong>Google Drive</strong> (útil pra acessar o mesmo catálogo de mais de um computador) — nesse caso, os mesmos arquivos passam a ser gravados numa pasta do seu próprio Drive, direto do navegador para a API do Google, sem passar por um servidor do lattesZen — ver detalhes na seção 4.</li>
           </ul>
-          <div class="note">Isso significa que, sem uma ação sua (exportar, publicar, doar), <strong>nenhum dado do seu currículo sai do seu dispositivo</strong>.</div>
+          <div class="note">Isso significa que, sem uma ação sua (exportar, publicar, doar ou conectar ao Google Drive), <strong>nenhum dado do seu currículo sai do seu dispositivo</strong>.</div>
         </section>
 
         <section class="card" id="dados">
@@ -187,7 +188,8 @@
             <thead><tr><th>Onde fica</th><th>O quê</th><th>Sai do seu dispositivo?</th></tr></thead>
             <tbody>
               <tr><td><code>localStorage</code> do navegador</td><td>Índice do catálogo, configurações e preferências de interface</td><td>Não</td></tr>
-              <tr><td>Pasta escolhida no seu computador (opcional)</td><td>Arquivos PDF de evidência, JSON de cada item, backups, página pública gerada</td><td>Não</td></tr>
+              <tr><td>Pasta escolhida no seu computador (padrão, opcional)</td><td>Arquivos PDF de evidência, JSON de cada item, backups, página pública gerada</td><td>Não</td></tr>
+              <tr><td>Google Drive da sua própria conta (alternativa opcional à pasta local)</td><td>Os mesmos arquivos acima, gravados direto do navegador pro Drive — ver seção 4</td><td>Sim, pro Google (nunca pro lattesZen)</td></tr>
               <tr><td>Memória da aba do navegador</td><td>Estado temporário da tela enquanto você usa o app</td><td>Não</td></tr>
             </tbody>
           </table>
@@ -200,7 +202,7 @@
             <li>Não tem servidor, backend ou banco de dados próprio para onde seus dados sejam enviados.</li>
             <li>Não pede conta, login, senha ou e-mail para uso.</li>
             <li>Não usa ferramentas de publicidade nem pixels de redes sociais (Meta Pixel e afins). O site usa <strong>Google Analytics</strong>, mediante seu consentimento, para métricas de acesso — ver detalhes na seção 4, abaixo.</li>
-            <li>Não vende, aluga, compartilha ou cede dados a terceiros. O Google Analytics é a exceção pontual descrita na seção 4 — fora dele, não há com quem compartilhar, já que não coletamos mais nada.</li>
+            <li>Não vende, aluga, compartilha ou cede dados a terceiros por iniciativa própria. As exceções são sempre por escolha explícita sua: o Google Analytics (métricas de navegação, mediante consentimento) e o Google Drive (se você optar por esse modo de armazenamento em vez da pasta local) — ambos detalhados na seção 4.</li>
             <li>Não envia nada automaticamente para a Plataforma Lattes ou qualquer outro serviço — toda exportação/publicação é uma ação explícita sua.</li>
           </ul>
         </section>
@@ -214,6 +216,10 @@
             <li><strong>Fonte Rawline</strong> e <strong>logo Gov.br</strong> (<code>cdngovbr-ds.estaleiro.serpro.gov.br</code>) — identidade visual do padrão Governo Federal.</li>
           </ul>
           <p>Essas requisições seguem o funcionamento normal da web: os provedores podem registrar metadados padrão de acesso (como endereço IP e navegador utilizado), segundo suas próprias políticas — o lattesZen não envia nenhum dado adicional a eles, e não tem controle sobre esses registros. Se algum desses recursos não carregar (rede lenta, bloqueio de firewall), o app continua funcionando com um estilo mais simples.</p>
+          <h3>Google Drive (armazenamento opcional)</h3>
+          <p>Em Configurações, você pode optar por conectar uma conta do Google Drive como alternativa a uma pasta local — útil pra acessar o mesmo catálogo de mais de um computador. Esse recurso é <strong>desligado por padrão</strong>: só é ativado se você mesmo clicar em "Conectar ao Google Drive" e autorizar o acesso pela própria tela de consentimento do Google.</p>
+          <p>A autenticação usa a <strong>Google Identity Services</strong> — sem nenhum servidor do lattesZen envolvido, a autorização acontece direto entre o seu navegador e o Google. O acesso é feito com o escopo <code>drive.file</code>: o lattesZen só enxerga os arquivos que ele mesmo cria no seu Drive, ou que você escolher explicitamente através do seletor de arquivos do Google (Picker) — nunca o restante do seu Drive.</p>
+          <p>Uma vez conectado, os arquivos do seu catálogo (PDFs de evidência, metadados de cada item, backups) passam a ser gravados e lidos direto do seu navegador para a API do Google Drive, sob a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">política de privacidade do Google</a> — o conteúdo do seu currículo passa a existir também no Google, além do seu navegador/computador. Você pode desconectar a qualquer momento em Configurações (o que não apaga os arquivos já gravados no Drive) e voltar ao modo local.</p>
           <h3>Google Analytics (GA4)</h3>
           <p>Diferente dos recursos acima (que só carregam bibliotecas visuais), o Google Analytics <strong>coleta e registra dados de navegação</strong>: páginas visitadas, duração da sessão, tipo de dispositivo/navegador, endereço IP (usado para estimar região aproximada) e site de origem — nunca <strong>o conteúdo do seu currículo</strong> (itens cadastrados, PDFs, dados do RSC), que continua exclusivamente no seu navegador/computador, como descrito nas seções 1 e 2. Antes de qualquer coleta, um <strong>aviso de cookies</strong> pergunta se você aceita; enquanto você não responder — ou se escolher "Recusar" — nenhuma requisição sai do seu navegador rumo ao Google. Ao aceitar, os dados passam a ir para o Google, sob a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">política de privacidade do Google</a>, e ficam disponíveis de forma agregada para quem mantém o lattesZen. O Google Analytics usa cookies (ex.: <code>_ga</code>) para diferenciar sessões de acesso; sua decisão (aceitar ou recusar) também fica salva no seu navegador — para revê-la, basta apagar os dados de navegação deste site, e o aviso volta a aparecer na próxima visita.</p>
           <div class="note">
