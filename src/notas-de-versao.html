@@ -145,6 +145,13 @@
             desde o marco atual.
         </p>
 
+        <section class="card" id="v0-7-10">
+          <h2><span class="pill">v0.7.10</span> <span class="data">08/09/2026</span></h2>
+          <ul>
+            <li><strong>CI: mais resiliente a lentidão momentânea do runner</strong> (bastidores, sem efeito no app): o runner do GitHub Actions às vezes fica lento por alguns minutos (fora do nosso controle) e o timeout padrão de navegação (30s) não sobrevivia a essas janelas — causava falhas em cadeia sem relação com o código. Agora esse timeout é 60s (e o limite por teste sobe de 90s pra 150s) — <a href="https://github.com/alexsandroccarv/latteszen/issues/109" target="_blank" rel="noopener">issue #109</a>.</li>
+          </ul>
+        </section>
+
         <section class="card" id="v0-7-09">
           <h2><span class="pill">v0.7.09</span> <span class="data">08/09/2026</span></h2>
           <ul>

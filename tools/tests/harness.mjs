@@ -53,12 +53,14 @@ export function test(name, fn) { TESTS.push({ name, fn }); }
 // Timeout por teste — sem isto, um teste que trave de verdade (ex.: um
 // page.evaluate esperando uma Promise que nunca resolve, como uma chamada de
 // rede real pra um domínio inacessível no CI; page.evaluate() NÃO tem o
-// timeout padrão de 30s do Playwright que ações como click/goto têm) prende a
+// timeout padrão do Playwright que ações como click/goto têm) prende a
 // suíte inteira indefinidamente, sem nenhum log de erro — foi exatamente o
-// que aconteceu num run do CI (>1h travado, sem diagnóstico). 90s é folgado
-// o bastante pros testes mais lentos legítimos da suíte (RSC com muitos
-// campos chega a ~45s) sem soar falso positivo.
-const TEST_TIMEOUT_MS = 90000;
+// que aconteceu num run do CI (>1h travado, sem diagnóstico). 150s dá folga
+// pros testes mais lentos legítimos da suíte (RSC com muitos campos chega a
+// ~45s) e pra um teste com 2-3 navegações sofrendo o timeout de 60s de
+// page.goto numa janela de lentidão do runner (ver setDefaultNavigationTimeout
+// acima), sem soar falso positivo.
+const TEST_TIMEOUT_MS = 150000;
 function withTimeout(promise, ms) {
     let timer;
     const timeout = new Promise((_, reject) => {
@@ -123,6 +125,16 @@ export async function runAll() {
             } catch (_) {}
         });
         const page = await context.newPage();
+        // O timeout padrão do Playwright (30s) pra ações/navegação já causou
+        // falhas em cadeia no CI: o runner às vezes fica momentaneamente
+        // lento por alguns minutos (contenção de CPU do runner hospedado,
+        // fora do nosso controle) e vários "page.goto" seguidos estouram
+        // 30s sem o servidor local ter de fato caído — só ficou lento.
+        // 60s dá folga pra sobreviver a essas janelas sem virar falso
+        // negativo; hangs de verdade continuam limitados pelo timeout por
+        // teste (TEST_TIMEOUT_MS) logo abaixo.
+        page.setDefaultTimeout(60000);
+        page.setDefaultNavigationTimeout(60000);
         const pageErrors = [];
         page.on('pageerror', (e) => pageErrors.push(e.message));
         page.on('dialog', (d) => d.accept());
