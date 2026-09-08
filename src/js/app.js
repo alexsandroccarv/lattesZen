@@ -671,6 +671,17 @@
             Storage.saveSettings(cfg);
         }
 
+        // Fotos de Perfil, Documentos pessoais e Outros passam a ficar como
+        // subpasta de "Evidências/01 Dados Gerais" (01.1/01.2/01.3), em vez
+        // de soltas em "Evidências".
+        if (!cfg.evidenciasDadosGeraisMigrada && Storage.hasDirectory()) {
+            try { await Storage.renameRootFolder('Evidências/20 Fotos de Perfil', LattesTypes.categoryFolder('PERFIL_FOTOS')); } catch (_) {}
+            try { await Storage.renameRootFolder('Evidências/21 Documentos pessoais', LattesTypes.categoryFolder('PERFIL_DOCS')); } catch (_) {}
+            try { await Storage.renameRootFolder('Evidências/00 Outros', LattesTypes.outrosFolder()); } catch (_) {}
+            cfg.evidenciasDadosGeraisMigrada = true;
+            Storage.saveSettings(cfg);
+        }
+
         // Aviso ao fechar/recarregar com edições não salvas
         window.addEventListener('beforeunload', (e) => { if (state.formDirty) { e.preventDefault(); e.returnValue = ''; } });
 

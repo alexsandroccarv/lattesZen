@@ -231,21 +231,6 @@ window.GDriveClient = (function () {
         if (resp.status === 404) return null;
         return (await resp.json()).parents || [];
     }
-    // Verifica se `fileId` está dentro da árvore de `ancestorId` (a própria
-    // pasta, ou uma subpasta dela, a qualquer profundidade) — sobe pela
-    // cadeia de pais até achar o ancestral ou chegar ao topo do Drive
-    // (limite de segurança contra ciclo/erro: 30 níveis, bem mais que
-    // qualquer estrutura de pastas real do app).
-    async function isDescendantOf(fileId, ancestorId) {
-        let current = fileId;
-        for (let i = 0; i < 30; i++) {
-            const parents = await getFileParents(current);
-            if (!parents || !parents.length) return false;
-            if (parents.includes(ancestorId)) return true;
-            current = parents[0];
-        }
-        return false;
-    }
 
     // Carrega a biblioteca do Google Picker (separada da GIS de autenticação
     // acima) — só quando o botão de selecionar arquivo do Drive for usado.
@@ -325,6 +310,6 @@ window.GDriveClient = (function () {
         findFolder, findFile, createFolder, ensureFolder, listChildren,
         createFile, updateFileContent, upsertFile, getFileContent, deleteFile, removeFileIfExists,
         renameFile, moveFile, moveAndRename,
-        getFileParents, isDescendantOf, pickFile,
+        getFileParents, pickFile,
     };
 })();

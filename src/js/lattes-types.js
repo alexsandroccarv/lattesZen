@@ -1351,11 +1351,13 @@ window.LATTES_CATEGORIES = [
       types: ['RSC_GRUPO_PESQUISA'] },
     // Fotos de Perfil e Documentos pessoais: editados em Configurações
     // (perfil), não em Catalogar — por isso `perfilOnly` (fora do seletor
-    // de categoria do Catalogar), mas continuam vinculados ao Lattes.
-    { num: '20', key: 'PERFIL_FOTOS', label: 'Fotos de Perfil', icon: 'fa-camera', perfilOnly: true, types: ['FOTO_PERFIL'] },
+    // de categoria do Catalogar), mas continuam vinculados ao Lattes. Ficam
+    // como subpasta de "01 Dados Gerais" (`subOf`), não soltas em
+    // "Evidências" — daí o num com ponto (01.1, 01.2).
+    { num: '01.1', key: 'PERFIL_FOTOS', label: 'Fotos de Perfil', icon: 'fa-camera', perfilOnly: true, subOf: 'DADOS_GERAIS', types: ['FOTO_PERFIL'] },
     { num: '21', key: 'RSC_CRISE_SAUDE', label: 'Atuação em Crise de Saúde Pública', icon: 'fa-virus', naoLattes: true, rscOnly: true,
       types: ['RSC_CRISE_SAUDE_ATUACAO'] },
-    { num: '21', key: 'PERFIL_DOCS', label: 'Documentos pessoais', icon: 'fa-address-card', perfilOnly: true, types: ['DOCUMENTO_PESSOAL', 'DOC_IDENTIDADE', 'DOC_PASSAPORTE'] },
+    { num: '01.2', key: 'PERFIL_DOCS', label: 'Documentos pessoais', icon: 'fa-address-card', perfilOnly: true, subOf: 'DADOS_GERAIS', types: ['DOCUMENTO_PESSOAL', 'DOC_IDENTIDADE', 'DOC_PASSAPORTE'] },
 ];
 
 // Categoria "primária" de cada tipo (usada pelo importador do XML)
@@ -1426,6 +1428,7 @@ window.LattesTypes = (function () {
     catByKey['NAO_LATTES'] = { num: '00', key: 'NAO_LATTES', label: 'Não-Lattes', icon: 'fa-heart' };
 
     const BACKUP_FOLDER = 'Cópia de segurança';
+    const INBOX_FOLDER = 'Caixa de Entrada';
     const EVIDENCIAS_FOLDER = 'Evidências';
     const LATTES_XML_FOLDER = 'Exportação/Lattes XML';
     const RSC_PCCTAE_FOLDER = 'Exportação/RSC-PCCTAE';
@@ -1434,12 +1437,22 @@ window.LattesTypes = (function () {
     const LIXEIRA_FOLDER = 'Lixeira';
     const EXTRA_FOLDERS = [PUBLICACAO_FOLDER, 'Relatórios', LIXEIRA_FOLDER];
 
-    function slugFolder(cat) {
-        // Nome de pasta seguro para o sistema de arquivos, legível e ordenável
-        // Padrão: "Evidências/NN Nome" (número + espaço + nome, sem hífen)
+    // Nome de pasta seguro para o sistema de arquivos, legível e ordenável
+    // Padrão: "NN Nome" (número + espaço + nome, sem hífen)
+    function folderName(cat) {
         const safe = (cat.label || cat.key).replace(/[\\/:*?"<>|]/g, '').trim();
-        return `${EVIDENCIAS_FOLDER}/${cat.num || '00'} ${safe}`;
+        return `${cat.num || '00'} ${safe}`;
     }
+    function slugFolder(cat) {
+        // subOf: fica como subpasta da categoria indicada, não solta em
+        // "Evidências" (ex.: Fotos de Perfil/Documentos pessoais dentro de
+        // "01 Dados Gerais").
+        if (cat.subOf) return `${EVIDENCIAS_FOLDER}/${folderName(catByKey[cat.subOf])}/${folderName(cat)}`;
+        return `${EVIDENCIAS_FOLDER}/${folderName(cat)}`;
+    }
+    // Pasta de itens sem categoria reconhecida (fallback de categoryFolder) —
+    // também uma subpasta de "01 Dados Gerais" (01.3 Outros).
+    const OUTROS_FOLDER = `${EVIDENCIAS_FOLDER}/${folderName(catByKey['DADOS_GERAIS'])}/01.3 Outros`;
 
     // Title Case pt-BR (iniciais maiúsculas, conectores em minúsculas)
     const TC_MINOR = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'a', 'o', 'ao', 'aos', 'à', 'às', 'com', 'por', 'para', 'sem', 'sob', 'entre', 'no', 'na', 'nos', 'nas', 'ou']);
@@ -1474,8 +1487,9 @@ window.LattesTypes = (function () {
         // dividida em categorias próprias) caem na primeira delas por padrão.
         categoryFolder(catKey) {
             if (catKey === 'NAO_LATTES' || catKey === 'ATIVIDADES_LIVRES') return slugFolder(catByKey['AL_DESENVOLVIMENTO']);
-            const c = catByKey[catKey]; return c ? slugFolder(c) : `${EVIDENCIAS_FOLDER}/00 Outros`;
+            const c = catByKey[catKey]; return c ? slugFolder(c) : OUTROS_FOLDER;
         },
+        outrosFolder() { return OUTROS_FOLDER; },
         primaryCategory(typeKey) { return PRIMARY_CATEGORY[typeKey] || 'PRODUCOES'; },
         normalizeType(typeKey) { return LEGACY_TYPE[typeKey] || typeKey; },
         isNaoLattesCategory(catKey) { return catKey === 'NAO_LATTES' || !!(catByKey[catKey] && catByKey[catKey].naoLattes); },
@@ -1487,13 +1501,14 @@ window.LattesTypes = (function () {
         isPerfilType(typeKey) { const t = this.getType(typeKey); return !!(t && t.perfil); },
         perfilTypes() { return Object.keys(TYPES).filter(k => TYPES[k].perfil); },
         // Estrutura de pastas criada ao configurar o diretório: Caixa de
-        // Entrada e Cópia de segurança na raiz (a Caixa é criada à parte, por
-        // Storage.ensureInbox); Exportação (RSC-PCCTAE, Progressão Docentes,
-        // Súmula Curricular FAPESP e Lattes XML); Evidências (uma subpasta
-        // por categoria); e Publicação para Web e Relatórios — todas de uso
-        // manual (o app não grava nelas automaticamente).
+        // Entrada e Cópia de segurança na raiz (a Caixa ganha a subpasta
+        // "Processados" à parte, por Storage.ensureInbox); Exportação
+        // (RSC-PCCTAE, Progressão Docentes, Súmula Curricular FAPESP e
+        // Lattes XML); Evidências (uma subpasta por categoria); e Publicação
+        // para Web e Relatórios — todas de uso manual (o app não grava nelas
+        // automaticamente).
         allFolders() {
-            return [BACKUP_FOLDER, ...EXPORT_FOLDERS, ...LATTES_CATEGORIES.map(slugFolder), ...EXTRA_FOLDERS];
+            return [INBOX_FOLDER, BACKUP_FOLDER, ...EXPORT_FOLDERS, ...LATTES_CATEGORIES.map(slugFolder), ...EXTRA_FOLDERS];
         },
         itemTitle(item) {
             const f = item.fields || {};

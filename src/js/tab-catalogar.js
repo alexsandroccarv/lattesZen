@@ -271,11 +271,12 @@ window.TabCatalogar = (function () {
 
     // Anexa, como evidência, um arquivo já existente no Google Drive do
     // usuário (selecionado no Picker) — em vez de enviar do computador. Se o
-    // arquivo escolhido já estiver dentro da pasta do lattesZen no Drive, é
-    // MOVIDO pra pasta certa ao salvar (o original é apagado depois de a
-    // cópia com o nome correto ser gravada); se estiver fora, é COPIADO (o
-    // original no Drive fica intocado) — ver o laço de gravação em
-    // onSubmitForm() (busca por "driveSourceInside").
+    // arquivo escolhido estiver diretamente na Caixa de Entrada, é tratado
+    // como se tivesse vindo da bandeja de entrada (mesmo campo `inboxName`
+    // usado por useInboxFile): MOVIDO pra Processados ao salvar, depois que
+    // a cópia certa já foi gravada na seção da evidência. Em qualquer outro
+    // caso (dentro de outra pasta do app, ou fora dele), é só COPIADO — o
+    // original no Drive fica intocado.
     async function addDriveEvidence() {
         const inp = $('#pdfInput');
         const allowed = window.AppCore.allowedExtsForAccept(inp ? inp.accept : '');
@@ -288,7 +289,7 @@ window.TabCatalogar = (function () {
         state.evEditing.push({
             basename: null, ext: window.AppCore.fileExt(picked.file), name: picked.file.name,
             publica: state.evEditing.length === 0, tag: '', file: picked.file,
-            driveSourceId: picked.driveSourceId, driveSourceInside: picked.driveSourceInside,
+            inboxName: picked.driveSourceInbox ? picked.file.name : null,
         });
         state.formDirty = true;
         renderEvList();
@@ -1695,12 +1696,9 @@ window.TabCatalogar = (function () {
                 try { await Storage.writeAttachment(basename, ev.file, subdir, ev.ext); }
                 catch (e) { toast('Falha ao gravar evidência "' + ev.name + '": ' + e.message, 'aviso'); continue; }
                 evOut.push({ basename, ext: ev.ext, name: ev.name, publica: !!ev.publica, tag: ev.tag || '' });
-                if (ev.inboxName) fromInbox.add(ev.inboxName);   // veio da bandeja de entrada
-                // Veio do Picker do Google Drive e já estava dentro da pasta do
-                // lattesZen: a cópia certa já foi gravada acima — apaga o
-                // original pra completar o efeito de "mover" (fora da pasta do
-                // app, o original nunca é tocado — fica só copiado).
-                if (ev.driveSourceInside && ev.driveSourceId) await Storage.deleteDriveFileById(ev.driveSourceId);
+                // veio da bandeja de entrada (diretamente, ou via Picker do
+                // Google Drive escolhendo um arquivo que já estava lá)
+                if (ev.inboxName) fromInbox.add(ev.inboxName);
             } else {
                 evOut.push({ basename: ev.basename, ext: ev.ext, name: ev.name, publica: !!ev.publica, tag: ev.tag || '' });
             }
@@ -1714,13 +1712,13 @@ window.TabCatalogar = (function () {
                 }
             }
         }
-        // Move para "Caixa de Entrada/00 Processado" os originais que vieram da bandeja
+        // Move para "Caixa de Entrada/Processados" os originais que vieram da bandeja
         let movidos = 0, falhasMove = 0;
         for (const nm of fromInbox) {
             try { await Storage.moveInboxToProcessed(nm); movidos++; }
             catch (_) { falhasMove++; }
         }
-        if (movidos) toast(`${movidos} arquivo(s) da bandeja movido(s) para “00 Processado”.`, 'ok');
+        if (movidos) toast(`${movidos} arquivo(s) da bandeja movido(s) para “Processados”.`, 'ok');
         if (falhasMove) toast(`${falhasMove} arquivo(s) da bandeja não puderam ser movidos.`, 'aviso');
         // "pública" é livre: 0..N evidências podem estar marcadas
         item.evidencias = evOut;

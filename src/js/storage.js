@@ -144,28 +144,28 @@ window.Storage = (function () {
     // evidência, um arquivo já existente no Drive do usuário (em vez de
     // enviar do computador). Baixa o conteúdo na hora (fica pronto pra
     // entrar no mesmo fluxo de evidências que um arquivo local) e informa se
-    // o arquivo escolhido já estava dentro da pasta do lattesZen no Drive —
-    // nesse caso, o chamador deve apagar o original depois de gravar a cópia
-    // com o nome/pasta corretos (efeito de "mover"); se estava fora, o
-    // original fica intocado (efeito de "copiar"). Retorna null se o usuário
-    // cancelar o seletor.
+    // o arquivo escolhido está diretamente dentro da Caixa de Entrada —
+    // nesse caso, o chamador trata como se tivesse vindo de lá (inboxName),
+    // completando o efeito de "mover" (original vai pra Processados) quando
+    // salvar; em qualquer outro caso (dentro de outra pasta do app, ou fora
+    // dele), o original fica intocado (efeito de "copiar"). Retorna null se
+    // o usuário cancelar o seletor.
     async function pickDriveEvidenceFile() {
         if (mode !== 'gdrive' || !gdriveCfg) throw new Error('Conecte o Google Drive antes de usar este recurso.');
         const picked = await window.GDriveClient.pickFile(APP_CONFIG.googlePickerApiKey);
         if (!picked) return null;
-        const driveSourceInside = await window.GDriveClient.isDescendantOf(picked.id, gdriveCfg.rootFolderId);
+        let driveSourceInbox = false;
+        try {
+            const inboxId = await resolveFolder(INBOX_FOLDER, false);
+            if (inboxId) {
+                const parents = await window.GDriveClient.getFileParents(picked.id);
+                driveSourceInbox = !!(parents && parents.includes(inboxId));
+            }
+        } catch (_) {}
         const blob = await window.GDriveClient.getFileContent(picked.id);
         if (!blob) throw new Error('Não foi possível baixar o conteúdo do arquivo selecionado.');
         const file = new File([blob], picked.name, { type: blob.type || picked.mimeType || 'application/octet-stream' });
-        return { file, driveSourceId: picked.id, driveSourceInside };
-    }
-    // Completa o efeito de "mover" após pickDriveEvidenceFile(): apaga o
-    // arquivo original no Drive (só deveria ser chamado depois que a cópia já
-    // foi gravada com sucesso no lugar certo). Silencioso em caso de falha —
-    // o pior cenário é uma sobra no Drive, não um dado perdido.
-    async function deleteDriveFileById(fileId) {
-        if (mode !== 'gdrive') return;
-        try { await window.GDriveClient.deleteFile(fileId); } catch (_) {}
+        return { file, driveSourceInbox };
     }
     async function connectGoogleDrive(cfg) {
         const pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';
@@ -365,10 +365,12 @@ window.Storage = (function () {
         const dir = await ensureDirReady();
         return dir.getDirectoryHandle(INBOX_FOLDER, { create: !!create });
     }
+    // A Caixa de Entrada em si já é criada por ensureSubdirs(LattesTypes.allFolders())
+    // (chamado antes desta função em toda instalação nova) — aqui só falta
+    // garantir a subpasta "Processados" dentro dela.
     async function ensureInbox() {
         if (mode === 'gdrive') {
             if (!gdriveCfg) return;
-            try { await resolveFolder(INBOX_FOLDER, true); } catch (_) {}
             try { await resolveFolder(`${INBOX_FOLDER}/${PROCESSED_FOLDER}`, true); } catch (_) {}
             return;
         }
@@ -568,21 +570,26 @@ window.Storage = (function () {
 
     // Remove um subdiretório obsoleto da raiz, só se estiver vazio (ex.: pasta
     // de categoria removida/renomeada numa migração). Não apaga se houver
-    // qualquer arquivo restante, por segurança.
-    async function removeSubdirIfEmpty(name) {
+    // qualquer arquivo restante, por segurança. `path` pode ter "/" (subpasta
+    // aninhada), não só um nome direto na raiz.
+    async function removeSubdirIfEmpty(path) {
         if (mode === 'gdrive') {
             if (!gdriveCfg) return false;
-            const id = await resolveFolder(name, false);
+            const id = await resolveFolder(path, false);
             if (!id) return false;
             let children; try { children = await window.GDriveClient.listChildren(id); } catch (_) { return false; }
             if (children.length > 0) return false;
-            try { await window.GDriveClient.deleteFile(id); delete gdriveCfg.folderCache[name]; persistGDriveConfig(); return true; } catch (_) { return false; }
+            try { await window.GDriveClient.deleteFile(id); delete gdriveCfg.folderCache[path]; persistGDriveConfig(); return true; } catch (_) { return false; }
         }
         if (!dirHandle) return false;
+        const segs = String(path).split('/').filter(Boolean);
+        const leaf = segs.pop();
+        let parent;
+        try { parent = segs.length ? await walkDir(dirHandle, segs.join('/'), false) : dirHandle; } catch (_) { return false; }
         let sub;
-        try { sub = await dirHandle.getDirectoryHandle(name); } catch (_) { return false; }
+        try { sub = await parent.getDirectoryHandle(leaf); } catch (_) { return false; }
         for await (const _ of sub.values()) { return false; }
-        try { await dirHandle.removeEntry(name, { recursive: true }); return true; } catch (_) { return false; }
+        try { await parent.removeEntry(leaf, { recursive: true }); return true; } catch (_) { return false; }
     }
 
     // Move recursivamente TODO o conteúdo (arquivos e subpastas) de um
@@ -607,14 +614,16 @@ window.Storage = (function () {
             }
         }
     }
-    // Renomeia/move uma pasta de sistema da raiz para outro nome ou caminho
-    // (ex.: "00 Inbox" -> "Caixa de Entrada", ou "Exportar Lattes" ->
-    // "Exportação/Lattes XML"), movendo todo o conteúdo — a File System
-    // Access API não tem rename nativo. Não faz nada se a pasta antiga não existir.
-    async function renameRootFolder(oldName, newPath) {
+    // Renomeia/move uma pasta pra outro nome ou caminho (ex.: "00 Inbox" ->
+    // "Caixa de Entrada", ou "Evidências/20 Fotos de Perfil" ->
+    // "Evidências/01 Dados Gerais/01.1 Fotos de Perfil"), movendo todo o
+    // conteúdo — a File System Access API não tem rename nativo. `oldPath`
+    // pode ter "/" (não precisa estar na raiz). Não faz nada se a pasta
+    // antiga não existir.
+    async function renameRootFolder(oldPath, newPath) {
         if (mode === 'gdrive') {
-            if (!gdriveCfg || oldName === newPath) return false;
-            const oldId = await resolveFolder(oldName, false);
+            if (!gdriveCfg || oldPath === newPath) return false;
+            const oldId = await resolveFolder(oldPath, false);
             if (!oldId) return false;
             const newSegs = String(newPath).split('/').filter(Boolean);
             const newLeaf = newSegs.pop();
@@ -622,17 +631,22 @@ window.Storage = (function () {
             const newParentId = newParentPath ? await resolveFolder(newParentPath, true) : gdriveCfg.rootFolderId;
             try { await window.GDriveClient.moveAndRename(oldId, newParentId, gdriveCfg.rootFolderId, newLeaf); }
             catch (_) { return false; }
-            delete gdriveCfg.folderCache[oldName];
+            delete gdriveCfg.folderCache[oldPath];
             gdriveCfg.folderCache[newPath] = oldId;
             persistGDriveConfig();
             return true;
         }
-        if (!dirHandle || oldName === newPath) return false;
-        let oldHandle;
-        try { oldHandle = await dirHandle.getDirectoryHandle(oldName); } catch (_) { return false; }
+        if (!dirHandle || oldPath === newPath) return false;
+        const oldSegs = String(oldPath).split('/').filter(Boolean);
+        const oldLeaf = oldSegs.pop();
+        let oldParent, oldHandle;
+        try {
+            oldParent = oldSegs.length ? await walkDir(dirHandle, oldSegs.join('/'), false) : dirHandle;
+            oldHandle = await oldParent.getDirectoryHandle(oldLeaf);
+        } catch (_) { return false; }
         const newHandle = await walkDir(dirHandle, newPath, true);
         await moveAllContents(oldHandle, newHandle);
-        try { await dirHandle.removeEntry(oldName, { recursive: true }); } catch (_) {}
+        try { await oldParent.removeEntry(oldLeaf, { recursive: true }); } catch (_) {}
         return true;
     }
     // Igual a renameRootFolder, mas a pasta antiga/nova fica DENTRO de um
@@ -799,7 +813,7 @@ window.Storage = (function () {
         directoryName, forgetDirectory, verifyPermission, checkHealth,
         // Google Drive
         storageMode, connectGoogleDrive, migrateLocalToGoogleDrive, gdriveFolderUrl,
-        pickDriveEvidenceFile, deleteDriveFileById,
+        pickDriveEvidenceFile,
         // arquivos
         writeJson, writeFile, writeAttachment, deleteEntry, deleteItemFiles, moveItemFiles, removeSubdirIfEmpty, renameRootFolder, renameNestedFolder, readAttachmentUrl, readAttachmentFile, scanDirectory, ensureSubdirs,
         // bandeja de entrada (inbox)

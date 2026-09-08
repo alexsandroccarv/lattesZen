@@ -1609,7 +1609,7 @@ window.TabConfig = (function () {
             try {
                 await Storage.chooseDirectory();
                 await Storage.ensureSubdirs(LattesTypes.allFolders()); // cria a estrutura de pastas
-                try { await Storage.ensureInbox(); } catch (_) {}      // cria "Caixa de Entrada" / "00 Processado"
+                try { await Storage.ensureInbox(); } catch (_) {}      // garante a subpasta "Processados" da Caixa de Entrada
                 state.dirHealth = null; // acabou de ser escolhida; revalidada no próximo render
                 // Sincroniza na hora: se a pasta já tinha itens (ex.: pasta de
                 // outro computador, ou reconfigurando após limpar o navegador),
@@ -1665,7 +1665,7 @@ window.TabConfig = (function () {
             try {
                 await Storage.connectGoogleDrive({ pasta });
                 await Storage.ensureSubdirs(LattesTypes.allFolders()); // cria a estrutura de pastas
-                try { await Storage.ensureInbox(); } catch (_) {}      // cria "Caixa de Entrada" / "Processados"
+                try { await Storage.ensureInbox(); } catch (_) {}      // garante a subpasta "Processados" da Caixa de Entrada
                 state.dirHealth = null; // acabou de conectar; revalidada no próximo render
                 let msg = 'Conectado ao Google Drive (estrutura de pastas criada).';
                 try {
@@ -1705,7 +1705,7 @@ window.TabConfig = (function () {
                 if (statusEl) statusEl.innerHTML = '<span class="text-gray-500">Conectando… (autorize na janela do Google)</span>';
                 await Storage.connectGoogleDrive({ pasta });
                 await Storage.ensureSubdirs(LattesTypes.allFolders()); // cria a estrutura de pastas
-                try { await Storage.ensureInbox(); } catch (_) {}      // cria "Caixa de Entrada" / "Processados"
+                try { await Storage.ensureInbox(); } catch (_) {}      // garante a subpasta "Processados" da Caixa de Entrada
                 if (statusEl) statusEl.innerHTML = '<span class="text-gray-500">Copiando arquivos da pasta local para o Google Drive…</span>';
                 const copiados = await Storage.migrateLocalToGoogleDrive((n, name) => {
                     if (statusEl) statusEl.innerHTML = `<span class="text-gray-500">Copiando arquivos… (${n} até agora — ${esc(name)})</span>`;

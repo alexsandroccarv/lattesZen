@@ -331,8 +331,10 @@ test('gdriveFolderUrl: erro de autenticação sobe como exceção, não vira "pa
 // hospedado pelo Google) não é testável aqui, então window.GDriveClient.pickFile
 // é substituído por um stub que devolve {id,name,mimeType} direto — o que É
 // testável (e é o que realmente importa) é o que Storage.pickDriveEvidenceFile
-// faz com o arquivo escolhido: baixa o conteúdo e decide mover (arquivo já
-// dentro da pasta do lattesZen no Drive) ou copiar (arquivo de fora).
+// faz com o arquivo escolhido: baixa o conteúdo e decide mover (arquivo
+// estava diretamente na Caixa de Entrada — vira evidência "da bandeja",
+// movida pra Processados ao salvar) ou copiar (qualquer outro caso — dentro
+// de outra pasta do app, ou fora dele — o original nunca é tocado).
 test('pickDriveEvidenceFile: arquivo de FORA da pasta do app fica marcado pra copiar (original intocado)', async ({ page, baseUrl }) => {
     const mock = createMockDrive();
     await mock.install(page);
@@ -348,16 +350,15 @@ test('pickDriveEvidenceFile: arquivo de FORA da pasta do app fica marcado pra co
 
     const picked = await page.evaluate(async () => {
         const p = await window.Storage.pickDriveEvidenceFile();
-        return { driveSourceId: p.driveSourceId, driveSourceInside: p.driveSourceInside, fileName: p.file.name, fileSize: p.file.size };
+        return { driveSourceInbox: p.driveSourceInbox, fileName: p.file.name, fileSize: p.file.size };
     });
-    assertEqual(picked.driveSourceId, 'ext1', 'driveSourceId deveria ser o id do arquivo escolhido no Picker');
-    assertEqual(picked.driveSourceInside, false, 'Arquivo fora da pasta do lattesZen: driveSourceInside deveria ser false (copiar, não mover)');
+    assertEqual(picked.driveSourceInbox, false, 'Arquivo fora da pasta do lattesZen: driveSourceInbox deveria ser false (copiar, não mover)');
     assertEqual(picked.fileName, 'evidencia-externa.pdf', 'O File reconstruído deveria manter o nome original do Drive');
     assert(picked.fileSize > 0, 'O File reconstruído deveria ter o conteúdo baixado (tamanho > 0)');
-    assert(mock.files.has('ext1'), 'O arquivo original NÃO deveria ter sido tocado só por selecioná-lo/baixá-lo (a exclusão só acontece explicitamente, quando dentro da pasta do app)');
+    assert(mock.files.has('ext1'), 'O arquivo original NÃO deveria ter sido tocado só por selecioná-lo/baixá-lo');
 });
 
-test('pickDriveEvidenceFile + deleteDriveFileById: arquivo já DENTRO da pasta do app (mesmo aninhado) é removido depois de completar o "mover"', async ({ page, baseUrl }) => {
+test('pickDriveEvidenceFile: arquivo DENTRO da pasta do app mas FORA da Caixa de Entrada também fica marcado pra copiar (original intocado)', async ({ page, baseUrl }) => {
     const mock = createMockDrive();
     await mock.install(page);
     await mockGis(page);
@@ -365,8 +366,10 @@ test('pickDriveEvidenceFile + deleteDriveFileById: arquivo já DENTRO da pasta d
     await conectar(page, 'lattesZen');
 
     const rootFolderId = await page.evaluate(() => window.Storage.loadSettings().gdrive.rootFolderId);
-    // Subpasta dentro da árvore do lattesZen, com um arquivo dentro dela —
-    // testa que isDescendantOf enxerga aninhamento, não só filho direto.
+    // Subpasta dentro da árvore do lattesZen (ex.: já filed em "Produções"),
+    // mas não é a Caixa de Entrada — pela regra atual, isso NÃO deve apagar
+    // o original (só a Caixa de Entrada é "mover"; qualquer outro lugar
+    // dentro da árvore do app é só "copiar", como um arquivo de fora).
     mock.files.set('sub1', { id: 'sub1', name: 'Produções', parentId: rootFolderId, isDir: true, content: null });
     mock.files.set('int1', { id: 'int1', name: 'evidencia-interna.pdf', parentId: 'sub1', isDir: false, content: 'conteudo-interno', mimeType: 'application/pdf' });
     await page.evaluate(() => {
@@ -375,12 +378,43 @@ test('pickDriveEvidenceFile + deleteDriveFileById: arquivo já DENTRO da pasta d
 
     const picked = await page.evaluate(async () => {
         const p = await window.Storage.pickDriveEvidenceFile();
-        return { driveSourceId: p.driveSourceId, driveSourceInside: p.driveSourceInside };
+        return { driveSourceInbox: p.driveSourceInbox };
     });
-    assertEqual(picked.driveSourceInside, true, 'Arquivo dentro (mesmo aninhado) da pasta do lattesZen: driveSourceInside deveria ser true (mover, não copiar)');
+    assertEqual(picked.driveSourceInbox, false, 'Arquivo dentro da pasta do app mas fora da Caixa de Entrada: driveSourceInbox deveria ser false (copiar, não mover)');
+    assert(mock.files.has('int1'), 'O arquivo original (já filed noutra pasta do app) NÃO deveria ser apagado');
+});
 
-    await page.evaluate((id) => window.Storage.deleteDriveFileById(id), picked.driveSourceId);
-    assert(!mock.files.has('int1'), 'Depois de completar o "mover" (deleteDriveFileById), o arquivo original deveria ter sumido do Drive');
+test('pickDriveEvidenceFile: arquivo DENTRO da Caixa de Entrada fica marcado como "da bandeja" (move pra Processados ao salvar)', async ({ page, baseUrl }) => {
+    const mock = createMockDrive();
+    await mock.install(page);
+    await mockGis(page);
+    await abrirConfig(page, baseUrl);
+    await conectar(page, 'lattesZen'); // já cria "Caixa de Entrada" na raiz
+
+    const rootFolderId = await page.evaluate(() => window.Storage.loadSettings().gdrive.rootFolderId);
+    let inboxId = null;
+    for (const f of mock.files.values()) { if (f.isDir && f.name === 'Caixa de Entrada' && f.parentId === rootFolderId) inboxId = f.id; }
+    assert(inboxId, 'Setup do teste: a Caixa de Entrada deveria já existir depois de conectar');
+    mock.files.set('in1', { id: 'in1', name: 'pendente.pdf', parentId: inboxId, isDir: false, content: 'conteudo-pendente', mimeType: 'application/pdf' });
+    await page.evaluate(() => {
+        window.GDriveClient.pickFile = async () => ({ id: 'in1', name: 'pendente.pdf', mimeType: 'application/pdf' });
+    });
+
+    const picked = await page.evaluate(async () => {
+        const p = await window.Storage.pickDriveEvidenceFile();
+        return { driveSourceInbox: p.driveSourceInbox, fileName: p.file.name };
+    });
+    assertEqual(picked.driveSourceInbox, true, 'Arquivo diretamente na Caixa de Entrada: driveSourceInbox deveria ser true (mover, não só copiar)');
+
+    // Completa o efeito de "mover" — o mesmo mecanismo usado pela bandeja
+    // clássica (useInboxFile/fromInbox), acionado em onSubmitForm() por
+    // causa do inboxName marcado em addDriveEvidence().
+    await page.evaluate((name) => window.Storage.moveInboxToProcessed(name), picked.fileName);
+    let procId = null;
+    for (const f of mock.files.values()) { if (f.isDir && f.name === 'Processados' && f.parentId === inboxId) procId = f.id; }
+    assert(procId, 'A subpasta "Processados" deveria existir dentro da Caixa de Entrada');
+    const emProcessados = Array.from(mock.files.values()).some((f) => f.id === 'in1' && f.parentId === procId);
+    assert(emProcessados, 'O arquivo original deveria ter sido movido da Caixa de Entrada pra Processados');
 });
 
 test('pickDriveEvidenceFile: cancelar o seletor retorna null, sem baixar nada', async ({ page, baseUrl }) => {
