@@ -32,7 +32,7 @@ test('Chip "Outras pendências" (sem carga horária) filtra corretamente', async
     assert(visivel.includes('Curso Sem CH') && !visivel.includes('Curso Com CH'), 'Deveria mostrar só "Curso Sem CH"');
 });
 
-test('Chip "Publicar na Web: não" reflete visibilidade.publicarWeb', async ({ page, baseUrl }) => {
+test('"Publicar na Web: não" não tem mais chip em "Outras pendências", mas o ícone por item continua filtrando', async ({ page, baseUrl }) => {
     const items = [
         makeItem('FORMACAO_COMPLEMENTAR', 'FORMACAO', { titulo: 'Curso Publicado', instituicao: 'X' }),
         makeItem('FORMACAO_COMPLEMENTAR', 'FORMACAO', { titulo: 'Curso Nao Publicado', instituicao: 'X' },
@@ -42,8 +42,16 @@ test('Chip "Publicar na Web: não" reflete visibilidade.publicarWeb', async ({ p
     await page.click('[data-tab="conformidade"]');
     await page.waitForTimeout(300);
 
-    await clickChip(page, 'pubWebNao');
-    assertEqual(await itemCount(page), '(1 de 2)', 'Filtrar pelo chip "Publicar na Web: não" deveria mostrar 1 item');
+    // "Exportar p/ Lattes: não" e "Publicar na Web: não" deixaram de ser chip
+    // no resumo (eram estado deliberado do usuário, não uma pendência de
+    // dado) — só o ícone no card de cada item continua existindo.
+    const temChipNoResumo = await page.evaluate(() => !!document.querySelector('#outrasPendenciasBox [data-view="pubWebNao"]'));
+    assert(!temChipNoResumo, '"Publicar na Web: não" não deveria mais aparecer como chip em "Outras pendências"');
+    const temChipExportNoResumo = await page.evaluate(() => !!document.querySelector('#outrasPendenciasBox [data-view="exportLattesNao"]'));
+    assert(!temChipExportNoResumo, '"Exportar p/ Lattes: não" também não deveria mais aparecer como chip em "Outras pendências"');
+
+    await clickChip(page, 'pubWebNao'); // clica no ícone do próprio item (só ele tem esse data-view agora)
+    assertEqual(await itemCount(page), '(1 de 2)', 'Filtrar pelo ícone "Publicar na Web: não" deveria mostrar 1 item');
     const visivel = await page.evaluate(() => document.querySelector('#itemList').textContent);
     assert(visivel.includes('Curso Nao Publicado') && !visivel.includes('Curso Publicado'), 'Deveria mostrar só o item não publicado');
 });

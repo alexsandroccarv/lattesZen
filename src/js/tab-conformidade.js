@@ -44,6 +44,8 @@ window.TabConformidade = (function () {
         anoImplausivel:   { cor: 'red', icone: 'fa-triangle-exclamation', titulo: 'Ano suspeito', desc: 'Fora do intervalo esperado' },
         semInstituicao:   { cor: 'red', icone: 'fa-building-circle-xmark', titulo: 'Sem instituição', desc: 'Falta informar a instituição' },
         semIdentificador: { cor: 'amber', icone: 'fa-barcode', titulo: 'Sem ISSN/ISBN', desc: 'Falta identificador bibliográfico' },
+        possivelDuplicata: { cor: 'amber', icone: 'fa-copy', titulo: 'Possível duplicata', desc: 'Mesmo tipo, título e ano de outro item' },
+        semAutores:        { cor: 'amber', icone: 'fa-user-slash', titulo: 'Sem autores', desc: 'Falta preencher os autores' },
     };
     // Tipos que exigem evidência (ex.: Identificação, Texto inicial, Outras
     // informações e Conexões não exigem) — usado nas métricas de conformidade.
@@ -77,6 +79,8 @@ window.TabConformidade = (function () {
         anoImplausivel:   i => isAnoImplausivel(i),
         semInstituicao:   i => isSemInstituicao(i),
         semIdentificador: i => isSemIdentificador(i),
+        possivelDuplicata: i => isPossivelDuplicata(i),
+        semAutores:        i => isSemAutores(i),
     };
 
     // Caixa de totalização/filtragem dos itens usáveis no RSC-PCCTAE (só
@@ -112,6 +116,7 @@ window.TabConformidade = (function () {
     // conformidade (cartões + barra) + lista de itens com filtro/ordenação.
     function render() {
         const panel = $('#tab-conformidade');
+        recalcularDuplicatas(); // os cartões/chips do topo usam count() logo abaixo — precisa estar pronto antes
         const count = k => state.items.filter(VIEW_PREDICATE[k]).length;
         const comprovados = count('comprovados');
         // Denominador da conformidade documental: só itens que EXIGEM evidência
@@ -154,11 +159,11 @@ window.TabConformidade = (function () {
                 ${card('comprovados')}${card('semPdf')}${card('naoLattes')}${card('descObrig')}
             </div>
 
-            <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-5">
+            <div id="outrasPendenciasBox" class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-5">
                 <h3 class="font-bold text-sm flex items-center gap-2 mb-3"><i aria-hidden="true" class="fa-solid fa-list-check text-gray-500"></i> Outras pendências</h3>
                 <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    ${chip('chVermelho')}${chip('exportLattesNao')}${chip('pubWebNao')}
-                    ${chip('periodoInvalido')}${chip('anoImplausivel')}${chip('semInstituicao')}${chip('semIdentificador')}
+                    ${chip('chVermelho')}${chip('periodoInvalido')}${chip('anoImplausivel')}${chip('semInstituicao')}
+                    ${chip('semIdentificador')}${chip('semAutores')}${chip('possivelDuplicata')}
                 </div>
             </div>
 
@@ -456,6 +461,50 @@ window.TabConformidade = (function () {
         if (!isSemIdentificador(item)) return '';
         return iconBtnHtml('semIdentificador', 'amber', 'Sem ISSN/ISBN', 'fa-barcode');
     }
+    // Sem autores: o tipo tem campo "autores" (textarea) ou "autoresLista"
+    // (repeater), mas está em branco/sem nenhuma linha. Campo não obrigatório,
+    // mas cada vez mais cobrado em prestação de contas (CAPES/Sucupira) — por
+    // isso vale um filtro dedicado, mesmo sem ser um erro em si (âmbar).
+    // "orientando" (Orientações) fica de fora de propósito: já é campo
+    // obrigatório do tipo, então "em branco" já cai em descObrig — um filtro
+    // aqui só duplicaria o que a Descrição obrigatória já cobre.
+    function isSemAutores(item) {
+        const def = LattesTypes.getType(item.typeKey);
+        const fAut = (def && def.fields || []).find(fld => fld.key === 'autores' || fld.key === 'autoresLista');
+        if (!fAut) return false;
+        const vals = item.fields || {};
+        if (isFieldDisabled(fAut, vals)) return false;
+        const v = vals[fAut.key];
+        return Array.isArray(v) ? v.length === 0 : !String(v || '').trim();
+    }
+    function semAutoresIconHtml(item) {
+        if (!isSemAutores(item)) return '';
+        return iconBtnHtml('semAutores', 'amber', 'Sem autores preenchidos', 'fa-user-slash');
+    }
+    // Possível duplicata: mesmo tipo + título (normalizado, ignora acento/
+    // caixa) + ano aparecendo em mais de um item — pode vir de reimportação
+    // do XML ou de "Duplicar" sem editar depois. Diferente dos demais
+    // detectores acima (todos puros por item), este depende dos OUTROS itens
+    // do catálogo — por isso é recalculado uma vez por renderItemList()
+    // (recalcularDuplicatas()), não item a item.
+    let duplicataIds = new Set();
+    function recalcularDuplicatas() {
+        const grupos = new Map();
+        state.items.forEach((i) => {
+            const titulo = normNome(LattesTypes.itemTitle(i) || '');
+            if (!titulo) return;
+            const chave = `${i.typeKey}|${itemYear(i)}|${titulo}`;
+            if (!grupos.has(chave)) grupos.set(chave, []);
+            grupos.get(chave).push(i.id);
+        });
+        duplicataIds = new Set();
+        for (const ids of grupos.values()) { if (ids.length > 1) ids.forEach((id) => duplicataIds.add(id)); }
+    }
+    function isPossivelDuplicata(item) { return duplicataIds.has(item.id); }
+    function duplicataIconHtml(item) {
+        if (!isPossivelDuplicata(item)) return '';
+        return iconBtnHtml('possivelDuplicata', 'amber', 'Possível duplicata (mesmo tipo, título e ano de outro item)', 'fa-copy');
+    }
     // Ícone "Exportar para Lattes": verde (entra no XML), cinza (desmarcado
     // no item — fica de fora mesmo sendo de tipo/categoria exportável). Some
     // para tipos/categorias que não vão pro Lattes de jeito nenhum (categorias
@@ -497,7 +546,7 @@ window.TabConformidade = (function () {
                     <div class="flex items-center gap-0.5 shrink-0 ml-auto">
                         ${evidenceIconsHtml(i)}
                         ${sep}
-                        ${cargaHorariaIconHtml(i)}${periodoInvalidoIconHtml(i)}${anoImplausivelIconHtml(i)}${semInstituicaoIconHtml(i)}${semIdentificadorIconHtml(i)}${rscIconHtml(i)}${lattesIconHtml(i)}${exportarLattesIconHtml(i)}${publicarWebIconHtml(i)}${descIconHtml(i)}
+                        ${cargaHorariaIconHtml(i)}${periodoInvalidoIconHtml(i)}${anoImplausivelIconHtml(i)}${semInstituicaoIconHtml(i)}${semIdentificadorIconHtml(i)}${semAutoresIconHtml(i)}${duplicataIconHtml(i)}${rscIconHtml(i)}${lattesIconHtml(i)}${exportarLattesIconHtml(i)}${publicarWebIconHtml(i)}${descIconHtml(i)}
                         <span class="print:hidden contents">
                             ${sep}
                             <button data-act="edit" data-id="${i.id}" title="Abrir / Editar" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-govbr-600 dark:text-unifesp-400"><i class="fa-solid fa-pen"></i></button>
@@ -585,6 +634,7 @@ window.TabConformidade = (function () {
     function renderItemList() {
         const list = $('#itemList');
         if (!list) return; // aba Conformidade não está montada
+        recalcularDuplicatas();
         const q = ($('#filterBox') && $('#filterBox').value || '').toLowerCase();
         const asc = (state.sortOrder || 'desc') === 'asc';
         const view = state.viewFilter && VIEW_PREDICATE[state.viewFilter] ? state.viewFilter : 'todos';

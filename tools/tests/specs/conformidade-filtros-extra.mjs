@@ -99,12 +99,12 @@ test('"Sem ISSN/ISBN": campo em branco é sinalizado (âmbar); tipos sem esses c
     assertEqual(await itemCount(page), '(2 de 4)', 'Filtrar por "Sem ISSN/ISBN" deveria trazer os 2 itens sem identificador');
 });
 
-test('Os 4 novos chips aparecem em "Outras pendências", com contagem correta', async ({ page, baseUrl }) => {
+test('Os chips extras aparecem em "Outras pendências", com contagem correta', async ({ page, baseUrl }) => {
     const items = [
         makeItem('VINCULO_PROFISSIONAL', 'ATUACAO', { instituicao: 'X', titulo: 'V1', situacao: 'Anterior (finalizado)', anoInicio: '2024', anoFim: '2020' }),
         makeItem('FORMACAO_COMPLEMENTAR', 'FORMACAO', { titulo: 'F1', instituicao: 'X', anoInicio: '2924' }),
         makeItem('LINHA_PESQUISA', 'ATUACAO', { titulo: 'L1' }),
-        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'A1', ano: '2024', periodico: 'Revista A' }),
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'A1', ano: '2024', periodico: 'Revista A' }), // sem issn e sem autoresLista
     ];
     await abrirConformidade(page, baseUrl, items);
 
@@ -113,4 +113,54 @@ test('Os 4 novos chips aparecem em "Outras pendências", com contagem correta', 
     assertEqual(await chipCount('anoImplausivel'), '1', 'Chip "Ano suspeito" deveria contar 1');
     assertEqual(await chipCount('semInstituicao'), '1', 'Chip "Sem instituição" deveria contar 1');
     assertEqual(await chipCount('semIdentificador'), '1', 'Chip "Sem ISSN/ISBN" deveria contar 1');
+    assertEqual(await chipCount('semAutores'), '1', 'Chip "Sem autores" deveria contar 1 (A1, sem autoresLista)');
+    assertEqual(await chipCount('possivelDuplicata'), '0', 'Nenhum título se repete neste conjunto — chip deveria contar 0');
+
+    // Os chips "não" (Exportar p/ Lattes / Publicar na Web) saíram do resumo
+    // — decisão deliberada do usuário, não uma pendência de dado.
+    assertEqual(await page.locator('#outrasPendenciasBox [data-view="exportLattesNao"]').count(), 0, '"Exportar p/ Lattes: não" não deveria mais ter chip no resumo');
+    assertEqual(await page.locator('#outrasPendenciasBox [data-view="pubWebNao"]').count(), 0, '"Publicar na Web: não" não deveria mais ter chip no resumo');
+});
+
+test('"Sem autores": autoresLista/autores em branco é sinalizado; tipos sem esses campos e "orientando" (já obrigatório) não são', async ({ page, baseUrl }) => {
+    const items = [
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'Artigo Sem Autores', ano: '2024', periodico: 'Revista A' }), // autoresLista ausente
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'Artigo Com Autores', ano: '2024', periodico: 'Revista B', autoresLista: [{ nomeCompleto: 'Fulana de Tal' }] }),
+        makeItem('LIVRO_CAPITULO', 'PRODUCOES', { titulo: 'Livro Sem Autores', ano: '2024', autores: '' }), // campo "autores" (textarea), em branco
+        makeItem('LINHA_PESQUISA', 'ATUACAO', { titulo: 'Linha Sem Campo Autores', instituicao: 'USP' }), // não tem campo autores
+        makeItem('ORIENTACAO_ANDAMENTO', 'ORIENTACOES', { titulo: 'Orientação', orientando: 'Ciclano', ano: '2024' }), // "orientando" já obrigatório — fora de propósito
+    ];
+    await abrirConformidade(page, baseUrl, items);
+
+    assert(await hasIcon(page, 'Artigo Sem Autores', 'fa-user-slash'), 'Artigo sem autoresLista deveria ser sinalizado');
+    assert(!(await hasIcon(page, 'Artigo Com Autores', 'fa-user-slash')), 'Artigo com pelo menos um autor não deveria ser sinalizado');
+    assert(await hasIcon(page, 'Livro Sem Autores', 'fa-user-slash'), 'Livro/capítulo com campo "autores" em branco deveria ser sinalizado');
+    assert(!(await hasIcon(page, 'Linha Sem Campo Autores', 'fa-user-slash')), 'Tipo sem campo de autores não deveria mostrar o ícone');
+    assert(!(await hasIcon(page, 'Orientação', 'fa-user-slash')), '"orientando" já é obrigatório (cai em Descrição obrigatória) — não deveria duplicar aqui');
+
+    await clickIconOn(page, 'Artigo Sem Autores', 'fa-user-slash');
+    assertEqual(await itemCount(page), '(2 de 5)', 'Filtrar por "Sem autores" deveria trazer os 2 itens sem autor preenchido');
+});
+
+test('"Possível duplicata": mesmo tipo + título + ano é sinalizado (ignora acento/caixa); título/ano/tipo diferente não são', async ({ page, baseUrl }) => {
+    // Duas duplicatas de verdade (mesmo tipo, mesmo ano, título igual a menos
+    // de acento/caixa) têm o MESMO título visível no card — não dá pra
+    // distinguir uma da outra por texto, então este teste usa contagem
+    // (chip + itemCount), não busca por título como os demais testes deste
+    // arquivo.
+    const items = [
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'Avaliação de Políticas Públicas', ano: '2024', periodico: 'Revista A' }),
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'AVALIACAO DE POLITICAS PUBLICAS', ano: '2024', periodico: 'Revista B' }), // mesmo título normalizado + mesmo ano + mesmo tipo
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'Avaliação de Políticas Públicas', ano: '2020', periodico: 'Revista C' }), // mesmo título, ano diferente
+        makeItem('LIVRO_CAPITULO', 'PRODUCOES', { titulo: 'Avaliação de Políticas Públicas', ano: '2024' }), // mesmo título/ano, tipo diferente
+        makeItem('ARTIGO_PERIODICO', 'PRODUCOES', { titulo: 'Outro Artigo Qualquer', ano: '2024', periodico: 'Revista D' }),
+    ];
+    await abrirConformidade(page, baseUrl, items);
+
+    const chipCount = async (view) => page.$eval(`[data-view="${view}"] span.font-bold`, (el) => el.textContent.trim());
+    assertEqual(await chipCount('possivelDuplicata'), '2', 'Só os 2 itens com mesmo tipo+título(normalizado)+ano deveriam contar como duplicata');
+
+    await page.click('[data-view="possivelDuplicata"]');
+    await page.waitForTimeout(200);
+    assertEqual(await itemCount(page), '(2 de 5)', 'Filtrar por "Possível duplicata" deveria trazer só os 2 itens duplicados entre si');
 });
