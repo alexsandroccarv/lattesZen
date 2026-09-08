@@ -6,6 +6,7 @@ import { runAll } from './harness.mjs';
 
 import './specs/campo-na.mjs';
 import './specs/conformidade.mjs';
+import './specs/conformidade-filtros-extra.mjs';
 import './specs/visibilidade.mjs';
 import './specs/lixeira.mjs';
 import './specs/sincronizacao.mjs';

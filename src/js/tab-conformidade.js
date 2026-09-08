@@ -40,6 +40,10 @@ window.TabConformidade = (function () {
         exportLattesNao:  { cor: 'gray', icone: 'fa-file-export', titulo: 'Exportar p/ Lattes: não', desc: 'Fora do XML gerado' },
         pubWebSim:        { cor: 'green', icone: 'fa-globe', titulo: 'Publicar na Web: sim', desc: 'Entra na página pública' },
         pubWebNao:        { cor: 'gray', icone: 'fa-globe', titulo: 'Publicar na Web: não', desc: 'Fora da página pública' },
+        periodoInvalido:  { cor: 'red', icone: 'fa-calendar-xmark', titulo: 'Datas trocadas', desc: 'Fim antes do início' },
+        anoImplausivel:   { cor: 'red', icone: 'fa-triangle-exclamation', titulo: 'Ano suspeito', desc: 'Fora do intervalo esperado' },
+        semInstituicao:   { cor: 'red', icone: 'fa-building-circle-xmark', titulo: 'Sem instituição', desc: 'Falta informar a instituição' },
+        semIdentificador: { cor: 'amber', icone: 'fa-barcode', titulo: 'Sem ISSN/ISBN', desc: 'Falta identificador bibliográfico' },
     };
     // Tipos que exigem evidência (ex.: Identificação, Texto inicial, Outras
     // informações e Conexões não exigem) — usado nas métricas de conformidade.
@@ -69,6 +73,10 @@ window.TabConformidade = (function () {
         exportLattesNao:  i => elegivelAoLattes(i.typeKey, i.categoryKey) && !!(i.visibilidade && i.visibilidade.exportarLattes === false),
         pubWebSim:        i => !LattesTypes.isPerfilType(i.typeKey) && publicarWebOk(i),
         pubWebNao:        i => !LattesTypes.isPerfilType(i.typeKey) && !publicarWebOk(i),
+        periodoInvalido:  i => isPeriodoInvalido(i),
+        anoImplausivel:   i => isAnoImplausivel(i),
+        semInstituicao:   i => isSemInstituicao(i),
+        semIdentificador: i => isSemIdentificador(i),
     };
 
     // Caixa de totalização/filtragem dos itens usáveis no RSC-PCCTAE (só
@@ -148,8 +156,9 @@ window.TabConformidade = (function () {
 
             <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-5">
                 <h3 class="font-bold text-sm flex items-center gap-2 mb-3"><i aria-hidden="true" class="fa-solid fa-list-check text-gray-500"></i> Outras pendências</h3>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     ${chip('chVermelho')}${chip('exportLattesNao')}${chip('pubWebNao')}
+                    ${chip('periodoInvalido')}${chip('anoImplausivel')}${chip('semInstituicao')}${chip('semIdentificador')}
                 </div>
             </div>
 
@@ -375,6 +384,78 @@ window.TabConformidade = (function () {
         const key = estado === 'green' ? 'chVerde' : estado === 'red' ? 'chVermelho' : 'chCinza';
         return iconBtnHtml(key, estado, title, 'fa-clock');
     }
+    // Período com datas trocadas: o tipo tem campo "anoFim" (fim de um
+    // intervalo início/fim), ambos preenchidos, e fim < início — um erro de
+    // digitação/lógica, diferente de "campo em branco" (que descState() já
+    // cobre). Ignora quando "anoFim" está desabilitado pela própria condição
+    // do tipo (ex.: situação "Atual (não finalizado)" — o campo nem deveria
+    // valer nesse caso, mesmo que guarde um valor antigo de antes da troca).
+    function isPeriodoInvalido(item) {
+        const def = LattesTypes.getType(item.typeKey);
+        const fFim = def && def.fields && def.fields.find(fld => fld.key === 'anoFim');
+        if (!fFim) return false;
+        const vals = item.fields || {};
+        if (isFieldDisabled(fFim, vals)) return false;
+        const ini = anoDe(vals.anoInicio || ''), fim = anoDe(vals.anoFim || '');
+        if (!ini || !fim) return false;
+        return parseInt(fim, 10) < parseInt(ini, 10);
+    }
+    function periodoInvalidoIconHtml(item) {
+        if (!isPeriodoInvalido(item)) return '';
+        return iconBtnHtml('periodoInvalido', 'red', 'Data de fim antes da data de início', 'fa-calendar-xmark');
+    }
+    // Ano fora de um intervalo plausível (1950 até o ano que vem) — protege
+    // contra erro de digitação (ex.: "2924" em vez de "2024") que hoje passa
+    // batido e bagunça silenciosamente a ordenação por ano, a Linha do tempo
+    // e a nuvem de palavras. Olha os 3 campos de ano possíveis (um tipo tem
+    // no máximo um deles), não só o "ano representativo" de itemYear().
+    const ANO_MIN_PLAUSIVEL = 1950;
+    function isAnoImplausivel(item) {
+        const vals = item.fields || {};
+        const anoMax = new Date().getFullYear() + 1;
+        return ['ano', 'anoInicio', 'anoFim'].some((k) => {
+            const v = anoDe(vals[k] || '');
+            if (!v) return false;
+            const n = parseInt(v, 10);
+            return n < ANO_MIN_PLAUSIVEL || n > anoMax;
+        });
+    }
+    function anoImplausivelIconHtml(item) {
+        if (!isAnoImplausivel(item)) return '';
+        return iconBtnHtml('anoImplausivel', 'red', 'Ano fora do intervalo esperado (possível erro de digitação)', 'fa-triangle-exclamation');
+    }
+    // Sem instituição informada: o tipo tem campo "instituicao" (Atuação,
+    // Formação, Projetos, Bancas...), mas está em branco. A própria lista de
+    // Conformidade já agrupa Atuação sem instituição num bloco à parte — este
+    // filtro só dá um atalho direto pra achar esses itens em qualquer categoria.
+    function isSemInstituicao(item) {
+        const def = LattesTypes.getType(item.typeKey);
+        const fInst = def && def.fields && def.fields.find(fld => fld.key === 'instituicao');
+        if (!fInst) return false;
+        const vals = item.fields || {};
+        if (isFieldDisabled(fInst, vals)) return false;
+        return !String(vals.instituicao || '').trim();
+    }
+    function semInstituicaoIconHtml(item) {
+        if (!isSemInstituicao(item)) return '';
+        return iconBtnHtml('semInstituicao', 'red', 'Instituição não informada', 'fa-building-circle-xmark');
+    }
+    // Sem ISSN/ISBN: o tipo tem campo "issn" ou "isbn" (produção
+    // bibliográfica), mas está em branco — identificador cada vez mais
+    // cobrado em avaliação (CAPES/Qualis). Menos crítico que data errada ou
+    // instituição ausente (é metadado bibliográfico, não um erro de fato),
+    // por isso fica em âmbar, não vermelho.
+    function isSemIdentificador(item) {
+        const def = LattesTypes.getType(item.typeKey);
+        const fIds = (def && def.fields || []).filter(fld => fld.key === 'issn' || fld.key === 'isbn');
+        if (!fIds.length) return false;
+        const vals = item.fields || {};
+        return fIds.every((fld) => !String(vals[fld.key] || '').trim());
+    }
+    function semIdentificadorIconHtml(item) {
+        if (!isSemIdentificador(item)) return '';
+        return iconBtnHtml('semIdentificador', 'amber', 'Sem ISSN/ISBN', 'fa-barcode');
+    }
     // Ícone "Exportar para Lattes": verde (entra no XML), cinza (desmarcado
     // no item — fica de fora mesmo sendo de tipo/categoria exportável). Some
     // para tipos/categorias que não vão pro Lattes de jeito nenhum (categorias
@@ -416,7 +497,7 @@ window.TabConformidade = (function () {
                     <div class="flex items-center gap-0.5 shrink-0 ml-auto">
                         ${evidenceIconsHtml(i)}
                         ${sep}
-                        ${cargaHorariaIconHtml(i)}${rscIconHtml(i)}${lattesIconHtml(i)}${exportarLattesIconHtml(i)}${publicarWebIconHtml(i)}${descIconHtml(i)}
+                        ${cargaHorariaIconHtml(i)}${periodoInvalidoIconHtml(i)}${anoImplausivelIconHtml(i)}${semInstituicaoIconHtml(i)}${semIdentificadorIconHtml(i)}${rscIconHtml(i)}${lattesIconHtml(i)}${exportarLattesIconHtml(i)}${publicarWebIconHtml(i)}${descIconHtml(i)}
                         <span class="print:hidden contents">
                             ${sep}
                             <button data-act="edit" data-id="${i.id}" title="Abrir / Editar" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-govbr-600 dark:text-unifesp-400"><i class="fa-solid fa-pen"></i></button>
