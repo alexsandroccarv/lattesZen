@@ -495,12 +495,13 @@ window.TabCatalogar = (function () {
         recompute();
     }
 
-    // Camada de Visibilidade no formulário (abaixo do bloco RSC): três eixos
-    // independentes — Exportar para Lattes (entra ou não no XML gerado),
-    // Visibilidade no Lattes (Público/Privado — só anotação, a Plataforma
-    // Lattes não expõe isso no XML de/para lattesZen) e Publicar na Web
-    // (entra ou não na página HTML própria). Nenhum dos três afeta o RSC,
-    // que usa sua própria marcação (rsc.conta), isolada.
+    // Camada de Visibilidade no formulário (abaixo do bloco RSC): dois eixos
+    // independentes — Exportar para Lattes (entra ou não no XML gerado) e
+    // Publicar na Web (entra ou não na página HTML própria). Nenhum dos dois
+    // afeta o RSC, que usa sua própria marcação (rsc.conta), isolada.
+    // "visivelNoLattes" (Público/Privado) existiu como um 3º eixo, mas nunca
+    // teve efeito nenhum fora daqui (não vai pro XML, não aparece em nenhum
+    // outro lugar) — virou sempre "Público" internamente, sem controle na UI.
     function renderVisibilidadeBlock(item) {
         const box = $('#visibilidadeBlock'); if (!box) return;
         const typeKey = $('#selTipo') ? $('#selTipo').value : '';
@@ -508,22 +509,18 @@ window.TabCatalogar = (function () {
         if (!typeKey || LattesTypes.isPerfilType(typeKey)) { box.innerHTML = ''; return; }
         const v = (item && item.visibilidade) || {};
         const exportarLattes = v.exportarLattes !== false;
-        const visivelNoLattes = v.visivelNoLattes !== 'Privado';
         const publicarWeb = v.publicarWeb !== false;
         const doLattes = elegivelAoLattes(typeKey, catKey);
 
         box.innerHTML = `
-        <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm bg-sky-50 dark:bg-sky-900/10 border border-sky-200 dark:border-sky-800 rounded px-3 py-2">
-            ${doLattes ? `
-            <label class="flex items-center gap-1.5"><input type="checkbox" id="visExportarLattes" ${exportarLattes ? 'checked' : ''}> Exportar item para meu Lattes</label>
-            <label class="flex items-center gap-1.5"><input type="checkbox" id="visVisivelLattes" ${visivelNoLattes ? 'checked' : ''}> Item visível (público) no Lattes</label>` : ''}
-            <label class="flex items-center gap-1.5"><input type="checkbox" id="visPublicarWeb" ${publicarWeb ? 'checked' : ''}> Publicar item na Web</label>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm bg-sky-50 dark:bg-sky-900/10 border border-sky-200 dark:border-sky-800 rounded px-3 py-2">
+            <span class="font-semibold">Publicar</span>
+            ${doLattes ? `<label class="flex items-center gap-1.5"><input type="checkbox" id="visExportarLattes" ${exportarLattes ? 'checked' : ''}> Lattes</label>` : ''}
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="visPublicarWeb" ${publicarWeb ? 'checked' : ''}> Web</label>
         </div>`;
 
         const expChk = $('#visExportarLattes');
         if (expChk) expChk.addEventListener('change', () => { state.formDirty = true; });
-        const visChk = $('#visVisivelLattes');
-        if (visChk) visChk.addEventListener('change', () => { state.formDirty = true; });
         const pubChk = $('#visPublicarWeb');
         if (pubChk) pubChk.addEventListener('change', () => { state.formDirty = true; });
     }
@@ -534,10 +531,9 @@ window.TabCatalogar = (function () {
         const pubChk = form.querySelector('#visPublicarWeb');
         if (!pubChk) return null;
         const expChk = form.querySelector('#visExportarLattes');
-        const visChk = form.querySelector('#visVisivelLattes');
         return {
             exportarLattes: expChk ? expChk.checked : false,
-            visivelNoLattes: (visChk ? visChk.checked : true) ? 'Público' : 'Privado',
+            visivelNoLattes: 'Público',
             publicarWeb: pubChk.checked,
         };
     }
@@ -666,19 +662,19 @@ window.TabCatalogar = (function () {
                 <p id="idInfo" class="text-xs text-gray-500"></p>
 
                 <div class="flex gap-2 pt-1 flex-wrap">
-                    <button type="submit" class="px-4 py-2 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-sm font-semibold hover:opacity-90" title="Atalho: Ctrl+S (Cmd+S no Mac)">
+                    <button type="submit" class="px-6 py-3 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-base font-semibold hover:opacity-90" title="Atalho: Ctrl+S (Cmd+S no Mac)">
                         <i aria-hidden="true" class="fa-solid fa-floppy-disk mr-1"></i> ${editing ? 'Salvar alterações' : 'Salvar'}
                     </button>
-                    <button type="button" id="btnSalvarNovo" class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm" title="Salva e abre um novo item na mesma categoria/tipo. Atalho: Ctrl+Enter (Cmd+Enter no Mac), quando não há um item em edição">
+                    <button type="button" id="btnSalvarNovo" class="px-6 py-3 rounded border border-gray-300 dark:border-gray-600 text-base" title="Salva e abre um novo item na mesma categoria/tipo. Atalho: Ctrl+Enter (Cmd+Enter no Mac), quando não há um item em edição">
                         <i aria-hidden="true" class="fa-solid fa-plus mr-1"></i> Salvar e novo
                     </button>
-                    ${editing ? `<button type="button" id="btnSalvarProximo" class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm" title="Salva e abre o próximo item da mesma categoria (ordem sequencial e circular). Atalho: Ctrl+Enter (Cmd+Enter no Mac)">
+                    ${editing ? `<button type="button" id="btnSalvarProximo" class="px-6 py-3 rounded border border-gray-300 dark:border-gray-600 text-base" title="Salva e abre o próximo item da mesma categoria (ordem sequencial e circular). Atalho: Ctrl+Enter (Cmd+Enter no Mac)">
                         <i aria-hidden="true" class="fa-solid fa-forward mr-1"></i> Salvar e próximo
                     </button>` : ''}
-                    <button type="button" id="btnLimpar" class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm" title="Limpa o formulário e começa um novo item em branco">
+                    <button type="button" id="btnLimpar" class="px-6 py-3 rounded border border-gray-300 dark:border-gray-600 text-base" title="Limpa o formulário e começa um novo item em branco">
                         <i aria-hidden="true" class="fa-solid fa-eraser mr-1"></i> Limpar
                     </button>
-                    <button type="button" id="btnCancelar" class="px-4 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm ${editing ? '' : 'hidden'}">Cancelar</button>
+                    <button type="button" id="btnCancelar" class="px-6 py-3 rounded border border-gray-300 dark:border-gray-600 text-base ${editing ? '' : 'hidden'}">Cancelar</button>
                 </div>
             </div>
             ${datalistsHtml()}`;
