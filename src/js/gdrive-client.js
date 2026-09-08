@@ -280,18 +280,28 @@ window.GDriveClient = (function () {
                 // clicar/entrar nelas (navegação por diretórios, com breadcrumb),
                 // igual à interface completa do Drive — mas setSelectFolderEnabled
                 // continua false: só um ARQUIVO pode ser o resultado final,
-                // pastas servem só pra navegar até ele. setEnableDrives(true):
-                // inclui Drives compartilhados na navegação (sem isto, só "Meu
-                // Drive" aparece). Sem setParent(...): deixa a navegação lateral
-                // nativa do Picker aparecer (Meu Drive/Compartilhados
+                // pastas servem só pra navegar até ele. Sem setParent(...): deixa
+                // a navegação lateral nativa do Picker aparecer (Compartilhados
                 // comigo/Recentes/Com estrela) — fixar um parent suprimia essas
                 // abas.
-                const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
+                //
+                // DUAS views separadas (não uma só com setEnableDrives): colocar
+                // setEnableDrives(true) na MESMA view que lista "Meu Drive" faz o
+                // Picker substituir a aba "Meu Drive" pelos Drives compartilhados,
+                // em vez de mostrar as duas. Cada view vira uma aba própria no
+                // Picker — a 1ª pra "Meu Drive", a 2ª (com setEnableDrives) só pra
+                // Drives compartilhados.
+                const viewMeuDrive = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
+                    .setIncludeFolders(true)
+                    .setSelectFolderEnabled(false);
+                const viewDrivesCompartilhados = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
                     .setSelectFolderEnabled(false)
-                    .setEnableDrives(true);
+                    .setEnableDrives(true)
+                    .setLabel('Drives compartilhados');
                 const picker = new window.google.picker.PickerBuilder()
-                    .addView(view)
+                    .addView(viewMeuDrive)
+                    .addView(viewDrivesCompartilhados)
                     .setOAuthToken(accessToken)
                     .setDeveloperKey(developerKey)
                     .setLocale('pt-BR')
