@@ -806,6 +806,20 @@ window.Storage = (function () {
         localStorage.setItem(K.settings, JSON.stringify(s));
     }
 
+    /* ------------- Tokens de publicação direta (GitHub/Netlify) ---------- */
+    // Guardados numa chave própria do localStorage, separada de
+    // loadSettings()/saveSettings() — ver comentário em APP_CONFIG.storageKeys.
+    function loadDeployTokens() {
+        try { return JSON.parse(localStorage.getItem(K.deployTokens)) || {}; }
+        catch (_) { return {}; }
+    }
+    function loadDeployToken(provider) { return loadDeployTokens()[provider] || ''; }
+    function saveDeployToken(provider, token) {
+        const t = loadDeployTokens();
+        if (token) t[provider] = token; else delete t[provider];
+        localStorage.setItem(K.deployTokens, JSON.stringify(t));
+    }
+
     return {
         supportsFS,
         // diretório
@@ -820,5 +834,6 @@ window.Storage = (function () {
         ensureInbox, listInbox, readInboxFile, moveInboxToProcessed,
         // catálogo + lixeira + settings
         loadCatalog, saveCatalog, loadTrash, saveTrash, loadSettings, saveSettings,
+        loadDeployToken, saveDeployToken,
     };
 })();

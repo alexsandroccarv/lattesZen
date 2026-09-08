@@ -18,6 +18,7 @@ import './specs/crossref-doi.mjs';
 import './specs/importar-bibtex-ris.mjs';
 import './specs/exportar-bibtex-ris.mjs';
 import './specs/gdrive.mjs';
+import './specs/deploy.mjs';
 import './specs/dir-wizard.mjs';
 import './specs/publicar.mjs';
 import './specs/inicio.mjs';

@@ -35,12 +35,17 @@ window.TabPublicar = (function () {
     const PUB_CSS_FILE = 'estilo.css';
     // Evidências públicas de um item, prontas para o modelo da página pública.
     // Por padrão embute em base64 (arquivo único, autossuficiente — usado na
-    // prévia e no HTML baixado). Com `external: true`, imagens (jpg/png/gif/
-    // webp) viram arquivo à parte em "Publicação para Web/img" e entram no
-    // modelo como link relativo, não base64 (demais tipos, ex. PDF, continuam
-    // embutidos — só "imagens" precisam ser arquivo separado). Links (kind
-    // 'link') sempre entram como estão, nos dois modos.
-    async function itemAnexos(it, external) {
+    // prévia e no HTML baixado). Com `opts.external: true`, imagens (jpg/png/
+    // gif/webp) viram arquivo à parte em "Publicação para Web/img" e entram
+    // no modelo como link relativo, não base64 (demais tipos, ex. PDF,
+    // continuam embutidos — só "imagens" precisam ser arquivo separado).
+    // Links (kind 'link') sempre entram como estão, nos dois modos. Com
+    // `opts.collect` (array), também empilha {path, content} de cada imagem
+    // externa nela — usado pela publicação direta (GitHub/Netlify), que
+    // precisa dos bytes em memória, não só do link relativo gravado na pasta.
+    async function itemAnexos(it, opts) {
+        opts = opts || {};
+        const { external, collect } = opts;
         const anexos = [];
         if (Array.isArray(it.evidencias)) {
             for (const ev of it.evidencias) {
@@ -52,8 +57,10 @@ window.TabPublicar = (function () {
                     if (!f) continue;
                     const nome = ev.name || `${ev.basename}.${ev.ext}`;
                     if (external && isImageExt(ev.ext)) {
+                        const relPath = `${PUB_IMG_SUBDIR}/${ev.basename}.${ev.ext}`;
                         await Storage.writeFile(`${ev.basename}.${ev.ext}`, f, `${LattesTypes.publicacaoFolder()}/${PUB_IMG_SUBDIR}`);
-                        anexos.push({ name: nome, ext: ev.ext, url: `${PUB_IMG_SUBDIR}/${ev.basename}.${ev.ext}` });
+                        if (collect) collect.push({ path: relPath, content: f });
+                        anexos.push({ name: nome, ext: ev.ext, url: relPath });
                     } else {
                         const du = await fileToDataUrl(f);
                         if (du) anexos.push({ name: nome, ext: ev.ext, dataUri: du });
@@ -80,6 +87,8 @@ window.TabPublicar = (function () {
     // e o "Baixar" continuam sempre autossuficientes (embed).
     async function buildPublicModel(opts) {
         const external = !!(opts && opts.external);
+        const collect = opts && opts.collect;
+        const anexosOpts = { external, collect };
         const items = state.items;
         const first = tk => items.find(i => i.typeKey === tk);
         const byType = tk => items.filter(i => i.typeKey === tk);
@@ -100,8 +109,11 @@ window.TabPublicar = (function () {
                 try {
                     const f = await Storage.readAttachmentFile(ev.basename, LattesTypes.categoryFolder('PERFIL_FOTOS'), ev.ext);
                     if (f) {
-                        if (external) { await Storage.writeFile(`foto.${ev.ext}`, f, `${LattesTypes.publicacaoFolder()}/${PUB_IMG_SUBDIR}`); foto = `${PUB_IMG_SUBDIR}/foto.${ev.ext}`; }
-                        else foto = await fileToDataUrl(f);
+                        if (external) {
+                            await Storage.writeFile(`foto.${ev.ext}`, f, `${LattesTypes.publicacaoFolder()}/${PUB_IMG_SUBDIR}`);
+                            foto = `${PUB_IMG_SUBDIR}/foto.${ev.ext}`;
+                            if (collect) collect.push({ path: foto, content: f });
+                        } else foto = await fileToDataUrl(f);
                     }
                 } catch (_) {}
             }
@@ -150,7 +162,7 @@ window.TabPublicar = (function () {
                         const y = itemYear(it); if (y != null && y > maxAno) maxAno = y;
                         const tipoLabel = LattesTypes.label(it.typeKey);
                         const linha = [tipoLabel, (it.fields && it.fields.orgao) || ''].map(s => String(s || '').trim()).filter(Boolean).join(' · ');
-                        itens.push({ titulo: LattesTypes.itemTitle(it), ano: itemAnoRange(it), linha, anexos: await itemAnexos(it, external) });
+                        itens.push({ titulo: LattesTypes.itemTitle(it), ano: itemAnoRange(it), linha, anexos: await itemAnexos(it, anexosOpts) });
                         publicItemsFlat.push(it);
                     }
                     gruposAtu.push({ label: inst === '\0outras' ? 'Outras atuações' : inst, itens, _maxAno: maxAno });
@@ -169,7 +181,7 @@ window.TabPublicar = (function () {
                 const its = sortByYear(items.filter(i => i.typeKey === tk && i.categoryKey === cat.key && publicarWebOk(i)), false);
                 if (!its.length) continue;
                 const itens = [];
-                for (const it of its) { itens.push({ titulo: LattesTypes.itemTitle(it), ano: itemAnoRange(it), linha: itemLinha(it), anexos: await itemAnexos(it, external) }); publicItemsFlat.push(it); }
+                for (const it of its) { itens.push({ titulo: LattesTypes.itemTitle(it), ano: itemAnoRange(it), linha: itemLinha(it), anexos: await itemAnexos(it, anexosOpts) }); publicItemsFlat.push(it); }
                 tipos.push({ label: LattesTypes.label(tk), itens });
             }
             const catNum = parseInt(cat.num, 10);
@@ -232,6 +244,30 @@ window.TabPublicar = (function () {
         await Storage.writeFile('index.html', html, folder);
         return { folder, html };
     }
+
+    /* ------------------- Publicação direta (GitHub/Netlify) -------------- */
+    // Monta os mesmos arquivos da versão "pronta para hospedar" (índice +
+    // css/estilo.css + img/*), mas devolvidos em memória — não depende de
+    // reler do diretório configurado depois de gravar (o GitHub/Netlify não
+    // enxergam a pasta local/Drive do usuário; os bytes têm que vir daqui).
+    async function buildDeployFiles() {
+        const collect = [];
+        const model = await buildPublicModel({ external: true, collect });
+        const html = LzPublish.renderHtml(model, pubStyle(), { externalCss: `css/${PUB_CSS_FILE}` });
+        const css = LzPublish.css(pubStyle());
+        return [{ path: 'index.html', content: html }, { path: `css/${PUB_CSS_FILE}`, content: css }, ...collect];
+    }
+    function deployConfig(provider) {
+        const s = Storage.loadSettings();
+        return Object.assign({ token: Storage.loadDeployToken(provider) }, s['deploy_' + provider] || {});
+    }
+    function saveDeployConfig(provider, cfg) {
+        const { token, ...resto } = cfg;
+        Storage.saveDeployToken(provider, token || '');
+        const s = Storage.loadSettings();
+        s['deploy_' + provider] = resto;
+        Storage.saveSettings(s);
+    }
     function render() {
         const panel = $('#tab-publicar');
         panel.innerHTML = `
@@ -252,6 +288,55 @@ window.TabPublicar = (function () {
                     </div>
                     <p id="pubStatus" class="text-xs text-gray-500 mt-2"></p>
                 </section>
+
+                <details class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <summary class="text-lg font-bold cursor-pointer flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up text-govbr-600 dark:text-unifesp-400"></i> Publicar direto num site</summary>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 my-3">Envia a página (a mesma versão de “Salvar na pasta”) direto para o GitHub Pages e/ou o Netlify, sem precisar baixar e enviar manualmente. Cada token fica guardado só neste navegador (não entra no backup de Configurações → Exportar catálogo) — use um token com o menor escopo possível.</p>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2">
+                            <h3 class="font-semibold text-sm flex items-center gap-2"><i class="fa-brands fa-github"></i> GitHub Pages</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Crie um <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" class="underline">token de acesso restrito a um repositório</a>, com permissão “Contents: Read and write” (e “Pages: Read and write”, opcional, para habilitar o Pages automaticamente).</p>
+                            <label class="block text-xs">Token
+                                <input id="ghToken" type="password" autocomplete="off" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="github_pat_…">
+                            </label>
+                            <div class="flex gap-2">
+                                <label class="block text-xs flex-1">Dono
+                                    <input id="ghOwner" type="text" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="usuario">
+                                </label>
+                                <label class="block text-xs flex-1">Repositório
+                                    <input id="ghRepo" type="text" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="usuario.github.io">
+                                </label>
+                            </div>
+                            <label class="block text-xs">Branch
+                                <input id="ghBranch" type="text" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="gh-pages">
+                            </label>
+                            <div class="flex gap-2 flex-wrap pt-1">
+                                <button id="btnGhSave" type="button" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-xs">Salvar configuração</button>
+                                <button id="btnGhDeploy" type="button" class="px-3 py-1.5 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-xs"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publicar no GitHub Pages</button>
+                            </div>
+                            <p id="ghDeployStatus" class="text-xs text-gray-500"></p>
+                        </div>
+
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2">
+                            <h3 class="font-semibold text-sm flex items-center gap-2"><i class="fa-solid fa-bolt"></i> Netlify</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Crie um <a href="https://app.netlify.com/user/applications#personal-access-tokens" target="_blank" rel="noopener" class="underline">token de acesso pessoal</a> em User settings → Applications. Se ainda não tem um site, use “Criar site novo”.</p>
+                            <label class="block text-xs">Token
+                                <input id="netlifyToken" type="password" autocomplete="off" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="nfp_…">
+                            </label>
+                            <label class="block text-xs">ID do site
+                                <input id="netlifySiteId" type="text" class="w-full rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm px-2 py-1 mt-0.5" placeholder="ex.: a1b2c3d4-…">
+                            </label>
+                            <div class="flex gap-2 flex-wrap pt-1">
+                                <button id="btnNetlifyCreateSite" type="button" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-xs">Criar site novo</button>
+                                <button id="btnNetlifySave" type="button" class="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-xs">Salvar configuração</button>
+                                <button id="btnNetlifyDeploy" type="button" class="px-3 py-1.5 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-xs"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Publicar no Netlify</button>
+                            </div>
+                            <p id="netlifyDeployStatus" class="text-xs text-gray-500"></p>
+                        </div>
+                    </div>
+                </details>
+
                 <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white" style="height:75vh">
                     <iframe id="pubPreview" class="w-full h-full" title="Prévia da página pública"></iframe>
                 </div>
@@ -296,6 +381,72 @@ window.TabPublicar = (function () {
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `curriculo-${safe}.html`; a.click(); URL.revokeObjectURL(a.href);
                 status(folder ? `Arquivo baixado — também salvo em “${folder}/”.` : 'Arquivo baixado.');
             } catch (e) { status(''); toast('Falha ao gerar: ' + e.message, 'erro'); }
+        });
+
+        // Publicação direta (GitHub/Netlify) — prefill com o que já estiver
+        // salvo (o token fica numa chave à parte, nunca no backup — ver
+        // deployConfig/saveDeployConfig acima).
+        const ghCfg = deployConfig('github');
+        $('#ghToken').value = ghCfg.token || '';
+        $('#ghOwner').value = ghCfg.owner || '';
+        $('#ghRepo').value = ghCfg.repo || '';
+        $('#ghBranch').value = ghCfg.branch || '';
+        const netlifyCfg = deployConfig('netlify');
+        $('#netlifyToken').value = netlifyCfg.token || '';
+        $('#netlifySiteId').value = netlifyCfg.siteId || '';
+
+        $('#btnGhSave').addEventListener('click', () => {
+            saveDeployConfig('github', {
+                token: $('#ghToken').value.trim(), owner: $('#ghOwner').value.trim(),
+                repo: $('#ghRepo').value.trim(), branch: $('#ghBranch').value.trim(),
+            });
+            toast('Configuração do GitHub salva neste navegador.', 'ok');
+        });
+        $('#btnGhDeploy').addEventListener('click', async () => {
+            const ghStatus = (t) => { const el = $('#ghDeployStatus'); if (el) el.textContent = t; };
+            const cfg = { token: $('#ghToken').value.trim(), owner: $('#ghOwner').value.trim(), repo: $('#ghRepo').value.trim(), branch: $('#ghBranch').value.trim() };
+            saveDeployConfig('github', cfg);
+            ghStatus('Gerando página…');
+            try {
+                const files = await buildDeployFiles();
+                ghStatus('Publicando no GitHub…');
+                const nome = (state.items.find(i => i.typeKey === 'IDENTIFICACAO' && i.fields && i.fields.titulo) || {}).fields;
+                const titulo = (nome && nome.titulo) ? nome.titulo : 'currículo';
+                const { commitUrl, pagesUrl } = await DeployGithub.publish(Object.assign({}, cfg, { files, message: `Publicar ${titulo} — lattesZen` }));
+                ghStatus(pagesUrl ? `Publicado — ${pagesUrl}` : `Publicado (commit) — ${commitUrl}`);
+                toast('Página publicada no GitHub Pages.', 'ok');
+            } catch (e) { ghStatus(''); toast('Falha ao publicar no GitHub: ' + e.message, 'erro'); }
+        });
+
+        $('#btnNetlifySave').addEventListener('click', () => {
+            saveDeployConfig('netlify', { token: $('#netlifyToken').value.trim(), siteId: $('#netlifySiteId').value.trim() });
+            toast('Configuração do Netlify salva neste navegador.', 'ok');
+        });
+        $('#btnNetlifyCreateSite').addEventListener('click', async () => {
+            const netStatus = (t) => { const el = $('#netlifyDeployStatus'); if (el) el.textContent = t; };
+            const token = $('#netlifyToken').value.trim();
+            if (!token) { toast('Informe o token do Netlify antes de criar o site.', 'aviso'); return; }
+            netStatus('Criando site…');
+            try {
+                const site = await DeployNetlify.createSite(token);
+                $('#netlifySiteId').value = site.id;
+                saveDeployConfig('netlify', { token, siteId: site.id });
+                netStatus(`Site criado — ${site.ssl_url || site.url}`);
+                toast('Site do Netlify criado.', 'ok');
+            } catch (e) { netStatus(''); toast('Falha ao criar site: ' + e.message, 'erro'); }
+        });
+        $('#btnNetlifyDeploy').addEventListener('click', async () => {
+            const netStatus = (t) => { const el = $('#netlifyDeployStatus'); if (el) el.textContent = t; };
+            const cfg = { token: $('#netlifyToken').value.trim(), siteId: $('#netlifySiteId').value.trim() };
+            saveDeployConfig('netlify', cfg);
+            netStatus('Gerando página…');
+            try {
+                const files = await buildDeployFiles();
+                netStatus('Publicando no Netlify…');
+                const { siteUrl } = await DeployNetlify.publish(Object.assign({}, cfg, { files }));
+                netStatus(siteUrl ? `Publicado — ${siteUrl}` : 'Publicado.');
+                toast('Página publicada no Netlify.', 'ok');
+            } catch (e) { netStatus(''); toast('Falha ao publicar no Netlify: ' + e.message, 'erro'); }
         });
     }
 

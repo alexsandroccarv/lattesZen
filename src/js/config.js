@@ -7,7 +7,7 @@ window.APP_CONFIG = {
     // Os dois primeiros números são atualizados manualmente; o terceiro (2
     // dígitos) é incrementado a cada issue fechada no GitHub — ver política
     // completa em CLAUDE.md e o histórico em notas-de-versao.html.
-    version: 'v0.7.15',
+    version: 'v0.7.16',
     lastModified: '08/09/2026',
     author: {
         nome: 'Alexsandro Cardoso Carvalho',
@@ -23,6 +23,11 @@ window.APP_CONFIG = {
         catalog: 'lz_catalog',       // índice de itens (backup em localStorage)
         trash: 'lz_trash',           // itens excluídos, aguardando restauração ou purga
         settings: 'lz_settings',     // preferências gerais
+        // Tokens de acesso (GitHub/Netlify, publicação direta) — À PARTE de
+        // "settings" de propósito: settings entra no backup exportável
+        // (Configurações → Exportar catálogo), e um token nunca deveria ir
+        // parar num arquivo que o usuário pode compartilhar/enviar a outro lugar.
+        deployTokens: 'lz_deploy_tokens',
         theme: 'tema',
         highContrast: 'altoContraste',
     },

@@ -19,7 +19,7 @@
    (ver js/pwa.js). Sem isso, uma aba já aberta pode continuar servindo JS
    antigo por tempo indefinido mesmo depois de um conserto já publicado.
    ========================================================================== */
-const CACHE_VERSION = 'v15';
+const CACHE_VERSION = 'v16';
 const PRECACHE = `lattesZen-precache-${CACHE_VERSION}`;
 const RUNTIME = `lattesZen-runtime-${CACHE_VERSION}`;
 
@@ -53,6 +53,8 @@ const PRECACHE_URLS = [
     './js/rsc.js',
     './js/docx-export.js',
     './js/gdrive-client.js',
+    './js/deploy-github.js',
+    './js/deploy-netlify.js',
     './js/app-core.js',
     './js/tab-publicar.js',
     './js/tab-inicio.js',
