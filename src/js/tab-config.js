@@ -1460,7 +1460,7 @@ window.TabConfig = (function () {
                     <button id="btnChooseDir" class="px-3 py-2 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-sm" ${Storage.supportsFS ? '' : 'disabled'}><i class="fa-solid fa-folder mr-1"></i> Escolher pasta</button>
                     ${dirWizardModo === 'existente' ? `<button id="btnSync" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 text-sm"><i class="fa-solid fa-rotate mr-1"></i> Sincronizar do diretório</button>` : ''}
                 </div>
-                ${Storage.supportsFS ? '' : '<p class="text-xs text-red-600 font-semibold mt-1">Seu navegador não suporta esta função — use Chrome ou Edge.</p>'}`;
+                ${Storage.supportsFS ? '' : '<p class="text-xs text-red-600 font-semibold mt-1">Pasta local não funciona neste navegador (em celular, nenhum navegador suporta — nem trocando de app; no computador, funciona só em Chrome ou Edge). Volte e escolha "Google Drive" em vez disso.</p>'}`;
             }
             if (dirWizardModo && dirWizardTipo === 'remoto') {
                 html += `
@@ -1508,7 +1508,7 @@ window.TabConfig = (function () {
                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
                         Cada item catalogado é salvo aqui como <code class="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">ID.pdf</code> +
                         <code class="text-xs bg-gray-200 dark:bg-gray-700 px-1 rounded">ID.json</code>.
-                        ${Storage.supportsFS ? '' : '<span class="text-red-600 font-semibold">Seu navegador não suporta esta função — use Chrome ou Edge.</span>'}
+                        ${Storage.supportsFS ? '' : '<span class="text-amber-700 dark:text-amber-400 font-semibold">Este navegador não suporta pasta local (celular, ou Safari/Firefox no computador) — use o Google Drive abaixo.</span>'}
                     </p>
                     ${dirSectionHtml}
                     ${gdriveMigrationNotice ? `<div id="gdriveMigrationNotice" class="text-sm mt-3 p-3 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300">

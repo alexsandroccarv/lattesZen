@@ -140,3 +140,41 @@ test('"Esquecer pasta" volta a mostrar o assistente do início (passo 1: prefixo
     assertEqual(await page.locator('[data-wizard-modo]').count(), 2, 'Depois de esquecer a pasta, o assistente deveria reaparecer do zero (passo 2)');
     assertEqual(await page.locator('#idPrefix').count(), 1, 'O passo 1 (prefixo) do assistente também deveria voltar a aparecer');
 });
+
+// Regressão (issue #14 — suporte a celular): sem File System Access API
+// (todo navegador em celular, e Safari/Firefox no computador), a mensagem
+// antiga dizia genericamente "use Chrome ou Edge" — enganoso em celular,
+// onde TROCAR de navegador não resolve (a API não existe em nenhum). A
+// mensagem certa aponta pro Google Drive, que funciona nesses navegadores
+// (é só fetch + OAuth via popup, não depende de File System Access API).
+async function simularSemFsAccessApi(page) {
+    await page.addInitScript(() => {
+        Object.defineProperty(window, 'Storage', {
+            configurable: true,
+            set(real) {
+                real.supportsFS = false;
+                Object.defineProperty(window, 'Storage', { value: real, writable: true, configurable: true });
+            },
+            get() { return undefined; },
+        });
+    });
+}
+
+test('Sem suporte a File System Access API (celular): "Escolher pasta" fica desabilitado, mas "Google Drive" continua disponível', async ({ page, baseUrl }) => {
+    await simularSemFsAccessApi(page);
+    await abrirConfig(page, baseUrl);
+
+    const textoTopo = await page.$eval('#dirSection', (el) => el.textContent);
+    assert(/google drive/i.test(textoTopo), 'O aviso deveria indicar o Google Drive como alternativa, não só dizer que o navegador não é suportado');
+    assert(!/use chrome ou edge/i.test(textoTopo), 'Não deveria mais sugerir "trocar de navegador" — em celular isso não resolve (nenhum navegador mobile suporta)');
+
+    await page.click('[data-wizard-modo="novo"]');
+    await page.waitForTimeout(100);
+    await page.click('[data-wizard-tipo="local"]');
+    await page.waitForTimeout(100);
+    assert(await page.isDisabled('#btnChooseDir'), '"Escolher pasta" deveria estar desabilitado sem suporte à File System Access API');
+
+    await page.click('[data-wizard-tipo="remoto"]');
+    await page.waitForTimeout(100);
+    assert(!(await page.isDisabled('#btnGDriveConnect')), '"Conectar ao Google Drive" NÃO deveria estar desabilitado — não depende da File System Access API');
+});
