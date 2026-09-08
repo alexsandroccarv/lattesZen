@@ -258,7 +258,9 @@ window.GDriveClient = (function () {
             };
             if (window.gapi) { finish(); return; }
             const script = document.createElement('script');
-            script.src = 'https://apis.google.com/js/api.js';
+            // hl=pt-BR: idioma da interface do Picker (Selecionar/Cancelar
+            // etc.) — sem isto, o Google mostra em inglês por padrão.
+            script.src = 'https://apis.google.com/js/api.js?hl=pt-BR';
             script.async = true;
             script.onload = finish;
             script.onerror = () => reject(new Error('Não foi possível carregar o script do seletor de arquivos do Google — verifique sua conexão.'));
@@ -278,15 +280,21 @@ window.GDriveClient = (function () {
                 // clicar/entrar nelas (navegação por diretórios, com breadcrumb),
                 // igual à interface completa do Drive — mas setSelectFolderEnabled
                 // continua false: só um ARQUIVO pode ser o resultado final,
-                // pastas servem só pra navegar até ele.
+                // pastas servem só pra navegar até ele. setEnableDrives(true):
+                // inclui Drives compartilhados na navegação (sem isto, só "Meu
+                // Drive" aparece). Sem setParent(...): deixa a navegação lateral
+                // nativa do Picker aparecer (Meu Drive/Compartilhados
+                // comigo/Recentes/Com estrela) — fixar um parent suprimia essas
+                // abas.
                 const view = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
                     .setSelectFolderEnabled(false)
-                    .setParent('root');
+                    .setEnableDrives(true);
                 const picker = new window.google.picker.PickerBuilder()
                     .addView(view)
                     .setOAuthToken(accessToken)
                     .setDeveloperKey(developerKey)
+                    .setLocale('pt-BR')
                     .setCallback((data) => {
                         const Action = window.google.picker.Action;
                         if (data.action === Action.PICKED) {
