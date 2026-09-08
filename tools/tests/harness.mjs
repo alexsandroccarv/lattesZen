@@ -50,6 +50,23 @@ const TESTS = [];
 // (e seu localStorage) é isolado e descartado ao final de cada teste.
 export function test(name, fn) { TESTS.push({ name, fn }); }
 
+// Timeout por teste — sem isto, um teste que trave de verdade (ex.: um
+// page.evaluate esperando uma Promise que nunca resolve, como uma chamada de
+// rede real pra um domínio inacessível no CI; page.evaluate() NÃO tem o
+// timeout padrão de 30s do Playwright que ações como click/goto têm) prende a
+// suíte inteira indefinidamente, sem nenhum log de erro — foi exatamente o
+// que aconteceu num run do CI (>1h travado, sem diagnóstico). 90s é folgado
+// o bastante pros testes mais lentos legítimos da suíte (RSC com muitos
+// campos chega a ~45s) sem soar falso positivo.
+const TEST_TIMEOUT_MS = 90000;
+function withTimeout(promise, ms) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`Teste excedeu ${ms / 1000}s sem terminar — provável hang (ex.: page.evaluate esperando uma chamada de rede que nunca resolve).`)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 export function assert(cond, msg) { if (!cond) throw new Error(msg || 'assert falhou'); }
 export function assertEqual(actual, expected, msg) {
     const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -110,7 +127,7 @@ export async function runAll() {
         page.on('pageerror', (e) => pageErrors.push(e.message));
         page.on('dialog', (d) => d.accept());
         try {
-            await fn({ page, baseUrl });
+            await withTimeout(fn({ page, baseUrl }), TEST_TIMEOUT_MS);
             if (pageErrors.length) throw new Error('Erro(s) de JS na página: ' + pageErrors.join(' | '));
             console.log(`  ✅ ${name}`);
             passed++;

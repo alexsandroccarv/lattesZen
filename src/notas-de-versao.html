@@ -145,6 +145,13 @@
             desde o marco atual.
         </p>
 
+        <section class="card" id="v0-7-09">
+          <h2><span class="pill">v0.7.09</span> <span class="data">08/09/2026</span></h2>
+          <ul>
+            <li><strong>CI: timeout na suíte de testes</strong> (bastidores, sem efeito no app): um teste travando de verdade (ex.: uma chamada de rede que nunca resolve) prendia a suíte inteira indefinidamente, sem diagnóstico — já aconteceu (mais de 1h travado). Agora cada teste tem um limite de 90s, e o workflow do GitHub Actions falha em no máximo 20min — <a href="https://github.com/alexsandroccarv/latteszen/issues/108" target="_blank" rel="noopener">issue #108</a>.</li>
+          </ul>
+        </section>
+
         <section class="card" id="v0-7-08">
           <h2><span class="pill">v0.7.08</span> <span class="data">07/09/2026</span></h2>
           <ul>

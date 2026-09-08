@@ -20,6 +20,12 @@ jobs:
   build-and-deploy:
     name: Validar, construir e publicar
     runs-on: ubuntu-latest
+    # Rede de segurança: sem isto, um hang de verdade na suíte de testes (já
+    # aconteceu — runner preso por mais de 1h sem nenhum log de erro) deixa o
+    # job rodando por até 6h (limite padrão do GitHub Actions), consumindo
+    # minutos de CI à toa. 20min é folgado (o pipeline inteiro normalmente
+    # termina em ~3-8min) mas falha rápido em caso de travamento.
+    timeout-minutes: 20
     steps:
       - name: Baixar o código
         uses: actions/checkout@v4
