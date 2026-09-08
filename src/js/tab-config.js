@@ -1107,6 +1107,29 @@ window.TabConfig = (function () {
             toast(state.rscEnabled ? 'Módulo RSC habilitado.' : 'Módulo RSC desabilitado.', 'ok');
         });
     }
+
+    // Mesmo mecanismo do RSC acima (checkbox mostra/oculta a aba), só que a
+    // aba Publicar na Web já existia antes deste toggle — por isso o padrão
+    // é habilitada, não escondida (ver comentário em app-core.js/state.pubWebEnabled).
+    function pubWebSectionHtml() {
+        return `<section id="pubWebSection" class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-globe text-govbr-600 dark:text-unifesp-400"></i> Publicar na Web (opcional)</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Gera uma página pública do currículo (com o que estiver marcado como "pública") e permite publicá-la num site. Desabilitar aqui só esconde a aba <strong>Publicar</strong> — nada é apagado.</p>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" id="pubWebEnable" ${state.pubWebEnabled ? 'checked' : ''}>
+                <span>Habilitar aba <strong>Publicar na Web</strong></span>
+            </label>
+        </section>`;
+    }
+    function wirePubWebConfig() {
+        const en = $('#pubWebEnable'); if (!en) return;
+        en.addEventListener('change', () => {
+            state.pubWebEnabled = en.checked;
+            const s = Storage.loadSettings(); s.pubWebEnabled = state.pubWebEnabled; Storage.saveSettings(s);
+            window.AppCore.applyPublicarVisibility();
+            toast(state.pubWebEnabled ? 'Aba "Publicar na Web" habilitada.' : 'Aba "Publicar na Web" desabilitada.', 'ok');
+        });
+    }
     // Duas listas configuráveis que a aba "Linha do tempo" usa para montar a
     // nuvem de palavras: palavras a excluir (nunca aparecem) e termos de mais
     // de uma palavra (ex.: "tech talks") que devem ser contados como um único
@@ -1518,6 +1541,7 @@ window.TabConfig = (function () {
 
                 ${cfgGroup(CFG_GROUPS[3])}
                 ${rscSectionHtml()}
+                ${pubWebSectionHtml()}
                 ${nuvemPalavrasSectionHtml()}
 
                 ${cfgGroup(CFG_GROUPS[4])}
@@ -1586,6 +1610,7 @@ window.TabConfig = (function () {
         wireCfgIndex();
         wirePerfilSection();
         wireRscConfig();
+        wirePubWebConfig();
         wireNuvemPalavrasSection();
         wireExportLattes();
         wireLixeiraSection();
@@ -1911,6 +1936,8 @@ window.TabConfig = (function () {
                 state.rscEnabled = !!merged.rscEnabled;
                 state.rscCfg = merged.rsc || {};
                 window.AppCore.applyRscVisibility();
+                state.pubWebEnabled = merged.pubWebEnabled !== false;
+                window.AppCore.applyPublicarVisibility();
                 restaurouConfig = true;
             }
             toast(`${items.length} item(ns) importado(s) do JSON.${restaurouConfig ? ' Configurações do sistema restauradas.' : ''}`, 'ok');

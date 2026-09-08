@@ -28,6 +28,12 @@ window.AppCore = (function () {
         vocab: {},          // listas curadas de autocomplete (por chave de campo)
         idPrefix: 'lz',     // prefixo do ID dos arquivos (configurável, até 3 chars)
         rscEnabled: false,  // módulo RSC-PCCTAE habilitado?
+        // Aba "Publicar na Web" — mesmo mecanismo do RSC (checkbox em
+        // Configurações mostra/oculta a aba), mas por padrão HABILITADA: a
+        // aba já existia e ficava sempre visível antes deste toggle, então o
+        // padrão preserva o comportamento atual em vez de escondê-la de
+        // quem já usa (RSC, ao contrário, sempre foi opt-in desde que existe).
+        pubWebEnabled: true,
         rscCfg: {},         // dados funcionais do servidor (cargo, escolaridade, etc.)
         rscMemorialTexto: '', // texto final do memorial (gerado por IA ou editado manualmente)
         nuvemExclusao: [],  // Linha do tempo: palavras que nunca devem aparecer na nuvem

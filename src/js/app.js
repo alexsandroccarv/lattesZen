@@ -402,6 +402,13 @@
     }
     // Publicado em AppCore para tab-config.js — mesmo motivo de uid/nowISO.
     window.AppCore.applyRscVisibility = applyRscVisibility;
+    // Mostra/oculta a aba Publicar na Web conforme o toggle em Configurações
+    // (mesmo mecanismo do RSC acima).
+    function applyPublicarVisibility() {
+        const btn = $('.tab-btn[data-tab="publicar"]');
+        if (btn) btn.classList.toggle('hidden', !state.pubWebEnabled);
+    }
+    window.AppCore.applyPublicarVisibility = applyPublicarVisibility;
     function switchTab(name) {
         // Guarda de alterações não salvas ao sair de "Catalogar"
         if (state.activeTab === 'catalogar' && name !== 'catalogar' && state.formDirty) {
@@ -598,9 +605,14 @@
         state.rscMemorialTexto = cfg.rscMemorialTexto || '';
         state.nuvemExclusao = Array.isArray(cfg.nuvemExclusao) ? cfg.nuvemExclusao : [];
         state.nuvemCompostas = Array.isArray(cfg.nuvemCompostas) ? cfg.nuvemCompostas : [];
+        // Diferente do RSC (opt-in, default false): a aba Publicar na Web já
+        // existia e ficava sempre visível, então a ausência da chave (quem
+        // nunca mexeu no toggle) conta como habilitada, não desabilitada.
+        state.pubWebEnabled = cfg.pubWebEnabled !== false;
         const { conexoesMigradas, pastasParaMover } = migrarItens();
         updateHeaderIdentity();
         applyRscVisibility();
+        applyPublicarVisibility();
         try { await Storage.restoreDirectory(); } catch (_) {}
         try { await checkDirHealth(); } catch (_) {} // silencioso: sem pedir permissão de novo sem um clique do usuário
         // Catálogo local vazio mas já há um diretório configurado e acessível:

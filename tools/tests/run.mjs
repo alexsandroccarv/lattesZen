@@ -21,6 +21,7 @@ import './specs/gdrive.mjs';
 import './specs/deploy.mjs';
 import './specs/dir-wizard.mjs';
 import './specs/publicar.mjs';
+import './specs/publicar-toggle.mjs';
 import './specs/inicio.mjs';
 import './specs/rsc.mjs';
 import './specs/rsc-filtro-criterio.mjs';
