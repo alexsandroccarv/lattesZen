@@ -36,7 +36,12 @@ test('Com controlador anterior (atualização), controllerchange recarrega a pá
     await page.goto(baseUrl + '/index.html');
     await page.waitForTimeout(300);
 
-    const reloadPromise = page.waitForEvent('load', { timeout: 2000 }).then(() => true).catch(() => false);
+    // 2000ms era curto demais — numa janela de lentidão momentânea do runner
+    // de CI (ver issue #109), um reload de página real pode legitimamente
+    // levar mais que isso, e o teste falhava por timing, não por o mecanismo
+    // ter quebrado (esse valor é passado explícito pra waitForEvent, então
+    // ignora o setDefaultTimeout(60000) do harness).
+    const reloadPromise = page.waitForEvent('load', { timeout: 10000 }).then(() => true).catch(() => false);
     await page.evaluate(() => window.__fakeSW.dispatchEvent(new Event('controllerchange'))).catch(() => {});
     const recarregou = await reloadPromise;
     assert(recarregou, 'Com um controller já ativo antes (nova versão assumindo), deveria recarregar automaticamente');
