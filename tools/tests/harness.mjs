@@ -108,22 +108,25 @@ export async function runAll() {
     });
 
     let passed = 0, failed = 0;
+    let debugouRede = false; // diagnóstico temporário (issue #119) — só no 1º teste
     const falhas = [];
     for (const { name, fn } of TESTS) {
         const context = await browser.newContext();
         // Bloqueia as CDNs externas de estilo/ícone/fonte/analytics (Tailwind
         // Play CDN, Font Awesome, fonte Rawline do governo, Google Tag
-        // Manager) — a suíte testa lógica/DOM, nunca a aparência visual, e
-        // uma dessas CDNs lenta ou fora do ar no runner de CI arrasta TODA a
-        // navegação (o evento "load" espera os <script>/<link> externos),
-        // multiplicando o tempo de CADA teste por dezenas de segundos (visto
-        // na prática: suíte inteira estourando os 20min de timeout do job,
-        // com cada teste sozinho levando 30-60s em vez de frações de
-        // segundo). abort() imediato deixa o comportamento igual em
-        // qualquer ambiente (sandbox, CI, local), sem depender da rede de
-        // terceiros — o app já lida bem com essas CDNs falhando (ex.:
-        // tw.onerror marca "no-tailwind" no <html>).
-        await context.route(/^https:\/\/(cdn\.tailwindcss\.com|cdnjs\.cloudflare\.com|cdngovbr-ds\.estaleiro\.serpro\.gov\.br|www\.googletagmanager\.com)\//, (route) => route.abort());
+        // Manager) e o selo de DOI do Zenodo no rodapé (imagem, carregada
+        // incondicionalmente, achada só ao instrumentar a rede — nenhum dos
+        // 4 hosts acima era ela) — a suíte testa lógica/DOM, nunca a
+        // aparência visual, e um desses recursos lento ou fora do ar no
+        // runner de CI arrasta TODA a navegação (o evento "load" espera os
+        // <script>/<link>/<img> externos), multiplicando o tempo de CADA
+        // teste por dezenas de segundos (visto na prática: suíte inteira
+        // estourando os 20min de timeout do job, com cada teste sozinho
+        // levando 30-60s em vez de frações de segundo). abort() imediato
+        // deixa o comportamento igual em qualquer ambiente (sandbox, CI,
+        // local), sem depender da rede de terceiros — o app já lida bem com
+        // essas CDNs falhando (ex.: tw.onerror marca "no-tailwind" no <html>).
+        await context.route(/^https:\/\/(cdn\.tailwindcss\.com|cdnjs\.cloudflare\.com|cdngovbr-ds\.estaleiro\.serpro\.gov\.br|www\.googletagmanager\.com|zenodo\.org)\//, (route) => route.abort());
         // Marca o aviso de 1ª execução como já visto: com o Tailwind CDN
         // bloqueado, o modal fica sem CSS e não intercepta cliques — mas sem
         // isto ele ainda apareceria (sem estilo) sobre a página.
@@ -136,6 +139,18 @@ export async function runAll() {
             } catch (_) {}
         });
         const page = await context.newPage();
+        // Diagnóstico temporário (issue #119): bloquear as CDNs conhecidas
+        // não resolveu a lentidão (~30-60s por teste em vez de frações de
+        // segundo) — loga toda requisição/resposta do 1º teste, com
+        // timestamp, pra achar exatamente o que trava.
+        if (!debugouRede) {
+            debugouRede = true;
+            const t0 = Date.now();
+            const dt = () => ((Date.now() - t0) / 1000).toFixed(2) + 's';
+            page.on('request', (r) => console.log(`    [rede ${dt()}] -> ${r.method()} ${r.url()}`));
+            page.on('requestfinished', (r) => console.log(`    [rede ${dt()}] <- OK ${r.url()}`));
+            page.on('requestfailed', (r) => console.log(`    [rede ${dt()}] <- FALHOU ${r.url()} (${r.failure() && r.failure().errorText})`));
+        }
         // O timeout padrão do Playwright (30s) pra ações/navegação já causou
         // falhas em cadeia no CI: o runner às vezes fica momentaneamente
         // lento por alguns minutos (contenção de CPU do runner hospedado,
