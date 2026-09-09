@@ -274,16 +274,213 @@ window.TabLinhaTempo = (function () {
             : `<p class="text-sm text-gray-500 italic py-8 text-center">Nenhum item com ano identificável ainda. Cadastre itens em <strong>Catalogar</strong> (ou importe o XML do Lattes) para ver a linha do tempo.</p>`;
 
         return `
-            <section class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <section id="gradeLinhaTempo" class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-table-cells text-govbr-600 dark:text-unifesp-400"></i> Linha do tempo</h2>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Quantidade de itens por categoria e ano — quanto mais escuro o quadradinho, mais itens naquele ano. Passe o mouse sobre um quadradinho para ver o total exato.</p>
                 ${corpo}
             </section>`;
     }
 
+    /* ------------------------------ Gráfico: produção por tipo × ano ------------------------------ */
+    // issue #10 — visão de "evolução da produção ao longo do tempo", agora por
+    // TIPO de item (mais granular que a grade acima, que agrupa por categoria).
+    // "Tipos de produção" = os tipos das 3 subdivisões da categoria "05
+    // Produções" (Bibliográfica/Técnica/Outra artística-cultural), pega direto
+    // da definição em LattesTypes — não do categoryKey gravado no item: um
+    // tipo como "Artigo em periódico" continua sendo produção bibliográfica
+    // mesmo se o usuário arquivou o item em outra categoria (ex.: "Educação e
+    // Popularização de C&T", que reaproveita os mesmos tipos).
+    // Usa LattesTypes.primaryCategory (não a lista de tipos dos "groups" da
+    // categoria "05 Produções") de propósito: o primeiro só cobre os tipos
+    // OFERECIDOS hoje no seletor de Catalogar, mas tipos legados ainda
+    // reconhecidos pelo app (ex.: "LIVRO_CAPITULO", de antes da categoria
+    // dividir em Livros/Capítulos) continuam existindo em catálogos
+    // importados — primaryCategory() cobre esses também (getType() descarta
+    // qualquer typeKey desconhecido, evitando contar lixo pela categoria
+    // padrão de primaryCategory pra tipos não mapeados).
+    function ehTipoDeProducao(item) {
+        return !!LattesTypes.getType(item.typeKey) && LattesTypes.primaryCategory(item.typeKey) === 'PRODUCOES';
+    }
+
+    // Agrupa os itens de produção em { typeKey: { ano: quantidade } }, com o
+    // total por tipo (decide quais tipos entram no gráfico e quais caem em
+    // "Outros" — ver serieDeProducao). Mesmo critério de ano de
+    // contarPorCategoriaEAno (itemYear — ignora itens sem ano identificável).
+    function contarProducaoPorTipoEAno() {
+        const porTipo = {}, totalPorTipo = {};
+        let anoMin = null, anoMax = null;
+        state.items.forEach(it => {
+            if (!ehTipoDeProducao(it)) return;
+            const ano = itemYear(it);
+            if (ano == null) return;
+            const porAno = (porTipo[it.typeKey] = porTipo[it.typeKey] || {});
+            porAno[ano] = (porAno[ano] || 0) + 1;
+            totalPorTipo[it.typeKey] = (totalPorTipo[it.typeKey] || 0) + 1;
+            if (anoMin == null || ano < anoMin) anoMin = ano;
+            if (anoMax == null || ano > anoMax) anoMax = ano;
+        });
+        return { porTipo, totalPorTipo, anoMin, anoMax };
+    }
+
+    // Paleta categórica validada (skill de dataviz): ordem fixa, testada pra
+    // pares ADJACENTES seguros (empilhados) em claro e escuro — nunca gerar
+    // mais cores ciclando. Classes de CSS puro (css/styles.css), não do
+    // Tailwind: aqui a cor É o dado, não decoração — não pode depender da CDN
+    // do Tailwind carregar pra existir. Além de 7 tipos, o resto entra em
+    // "Outros" (cinza neutro — não compete com as cores de identidade reais).
+    const CLASSES_COR_TIPO = ['viz-cat-1', 'viz-cat-2', 'viz-cat-3', 'viz-cat-4', 'viz-cat-5', 'viz-cat-6', 'viz-cat-7'];
+    const CLASSE_COR_OUTROS = 'viz-cat-outros';
+    const TOP_N_TIPOS = CLASSES_COR_TIPO.length;
+
+    // Monta as séries do gráfico: os TOP_N_TIPOS tipos com mais itens, cada um
+    // com sua própria cor, e o restante somado numa série "Outros" — evita um
+    // gráfico com dezenas de cores quase indistinguíveis (ver dataviz skill:
+    // acima de ~7-8 séries categóricas, dobrar a cauda em "Outros").
+    function serieDeProducao() {
+        const { porTipo, totalPorTipo, anoMin, anoMax } = contarProducaoPorTipoEAno();
+        const tipoKeys = Object.keys(totalPorTipo).sort((a, b) => totalPorTipo[b] - totalPorTipo[a]);
+        const principais = tipoKeys.slice(0, TOP_N_TIPOS);
+        const demais = tipoKeys.slice(TOP_N_TIPOS);
+        const series = principais.map((tk, i) => ({
+            label: LattesTypes.label(tk), corClasse: CLASSES_COR_TIPO[i], porAno: porTipo[tk], total: totalPorTipo[tk],
+        }));
+        if (demais.length) {
+            const porAnoOutros = {};
+            let totalOutros = 0;
+            demais.forEach(tk => {
+                Object.entries(porTipo[tk]).forEach(([ano, n]) => { porAnoOutros[ano] = (porAnoOutros[ano] || 0) + n; });
+                totalOutros += totalPorTipo[tk];
+            });
+            series.push({ label: 'Outros', corClasse: CLASSE_COR_OUTROS, porAno: porAnoOutros, total: totalOutros });
+        }
+        return { series, anoMin, anoMax };
+    }
+
+    // Intervalo "bonito" entre marcas do eixo Y (~4 marcas), arredondado pra
+    // 1/2/5/10 × uma potência de 10 — evita marcas tipo "0, 3, 6, 9, 12, 15".
+    function passoBonito(max) {
+        const bruto = Math.max(1, max) / 4;
+        const mag = Math.pow(10, Math.floor(Math.log10(bruto)));
+        const norm = bruto / mag;
+        const passo = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+        return Math.max(1, passo * mag);
+    }
+
+    function renderGraficoProducao() {
+        const { series, anoMin, anoMax } = serieDeProducao();
+        if (!series.length) {
+            return `
+                <section id="graficoProducaoTipo" class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-column text-govbr-600 dark:text-unifesp-400"></i> Produção por tipo</h2>
+                    <p class="text-sm text-gray-500 italic py-8 text-center">Nenhum item de produção (bibliográfica, técnica ou artística/cultural) com ano identificável ainda.</p>
+                </section>`;
+        }
+        const anos = [];
+        for (let y = anoMin; y <= anoMax; y++) anos.push(y);
+
+        const totalPorAno = anos.map(y => series.reduce((s, sr) => s + (sr.porAno[y] || 0), 0));
+        const maxTotal = Math.max(1, ...totalPorAno);
+        const passo = passoBonito(maxTotal);
+        const yMax = Math.ceil(maxTotal / passo) * passo;
+        const ticks = [];
+        for (let v = 0; v <= yMax; v += passo) ticks.push(v);
+
+        // Layout: banda fixa por ano (cresce com o nº de anos, com rolagem
+        // horizontal — mesmo padrão da grade acima) e barra fina (≤24px, ver
+        // dataviz skill), sempre a partir de uma única linha de base.
+        const PLOT_H = 200, MARGIN_L = 34, MARGIN_B = 22, MARGIN_T = 6;
+        const BAND_W = 42, BAR_W = 22, GAP = 2;
+        const svgW = MARGIN_L + anos.length * BAND_W + 8;
+        const svgH = MARGIN_T + PLOT_H + MARGIN_B;
+        const yFor = (v) => MARGIN_T + PLOT_H - (v / yMax) * PLOT_H;
+
+        const gridHtml = ticks.map(v => {
+            const y = yFor(v).toFixed(1);
+            return `<line x1="${MARGIN_L}" y1="${y}" x2="${svgW - 4}" y2="${y}" class="stroke-gray-200 dark:stroke-gray-700" stroke-width="1"/>
+                    <text x="${MARGIN_L - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" class="fill-gray-500 dark:fill-gray-400" font-size="9">${v}</text>`;
+        }).join('');
+
+        // Cada segmento tem uma folga de 2px (o "surface gap" da dataviz
+        // skill: separa visualmente as camadas empilhadas sem precisar de
+        // contorno) — só o segmento mais ao topo de cada barra (o único com
+        // uma ponta livre) ganha o canto arredondado, via 2 retângulos
+        // sobrepostos (um arredondado embaixo, um quadrado por cima cobrindo
+        // tudo menos os 4px do topo) — o resto fica quadrado, na base.
+        const barsHtml = anos.map((y, i) => {
+            const x = MARGIN_L + i * BAND_W + (BAND_W - BAR_W) / 2;
+            const ativos = series.map(sr => ({ sr, n: sr.porAno[y] || 0 })).filter(d => d.n > 0);
+            let acumulado = 0;
+            return ativos.map((d, idx) => {
+                const baseY = yFor(acumulado);
+                const topY = yFor(acumulado + d.n);
+                acumulado += d.n;
+                const rectY = topY + GAP / 2;
+                const h = Math.max(0.5, (baseY - topY) - GAP);
+                const titulo = `<title>${esc(d.sr.label)} — ${y}: ${d.n} ite${d.n === 1 ? 'm' : 'ns'}</title>`;
+                const isTopo = idx === ativos.length - 1;
+                if (isTopo && h > 4) {
+                    return `<g>${titulo}
+                        <rect x="${x}" y="${rectY.toFixed(1)}" width="${BAR_W}" height="${h.toFixed(1)}" rx="4" ry="4" class="${d.sr.corClasse}"/>
+                        <rect x="${x}" y="${(rectY + 4).toFixed(1)}" width="${BAR_W}" height="${(h - 4).toFixed(1)}" class="${d.sr.corClasse}"/>
+                    </g>`;
+                }
+                return `<rect x="${x}" y="${rectY.toFixed(1)}" width="${BAR_W}" height="${h.toFixed(1)}" class="${d.sr.corClasse}">${titulo}</rect>`;
+            }).join('');
+        }).join('');
+
+        const xLabelsHtml = anos.map((y, i) => {
+            const cx = MARGIN_L + i * BAND_W + BAND_W / 2;
+            return `<text x="${cx}" y="${MARGIN_T + PLOT_H + 14}" text-anchor="middle" class="fill-gray-500 dark:fill-gray-400" font-size="9">${y}</text>`;
+        }).join('');
+
+        const legendHtml = series.map(sr => `
+            <span class="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-300">
+                <span class="w-2.5 h-2.5 rounded-sm shrink-0 ${sr.corClasse}"></span>
+                ${esc(sr.label)} <span class="text-gray-400 dark:text-gray-500">(${sr.total})</span>
+            </span>`).join('');
+
+        // Alternativa acessível/tabular aos dados do gráfico — tipo × ano,
+        // recolhida por padrão (mesmo padrão de <details> usado em Itens).
+        const tabelaHtml = `
+            <details class="mt-3 text-xs">
+                <summary class="cursor-pointer select-none text-gray-500 dark:text-gray-400 hover:text-govbr-600 dark:hover:text-unifesp-400">Ver como tabela</summary>
+                <div class="overflow-x-auto mt-2">
+                    <table class="border-collapse text-xs">
+                        <thead><tr>
+                            <th class="text-left pr-3 pb-1 font-semibold">Tipo</th>
+                            ${anos.map(y => `<th class="px-2 pb-1 font-normal text-gray-500 dark:text-gray-400 text-right">${y}</th>`).join('')}
+                            <th class="px-2 pb-1 font-semibold text-right">Total</th>
+                        </tr></thead>
+                        <tbody>${series.map(sr => `
+                            <tr class="border-t border-gray-200 dark:border-gray-700">
+                                <td class="pr-3 py-1 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-sm mr-1 ${sr.corClasse}"></span>${esc(sr.label)}</td>
+                                ${anos.map(y => `<td class="px-2 py-1 text-right tabular-nums">${sr.porAno[y] || '—'}</td>`).join('')}
+                                <td class="px-2 py-1 text-right font-semibold tabular-nums">${sr.total}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </details>`;
+
+        return `
+            <section id="graficoProducaoTipo" class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-chart-column text-govbr-600 dark:text-unifesp-400"></i> Produção por tipo</h2>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Quantidade de produção bibliográfica, técnica e artística/cultural por ano, separada por tipo — passe o mouse sobre um bloco para ver o total exato.</p>
+                <div class="overflow-x-auto">
+                    <svg viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}" role="img" aria-label="Produção por tipo e ano">
+                        ${gridHtml}
+                        ${barsHtml}
+                        ${xLabelsHtml}
+                    </svg>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1.5 mt-3">${legendHtml}</div>
+                ${tabelaHtml}
+            </section>`;
+    }
+
     function render() {
         const panel = $('#tab-linhatempo');
-        panel.innerHTML = `<div class="space-y-4 max-w-full">${renderNuvemPalavras()}${renderGradeLinhaTempo()}</div>`;
+        panel.innerHTML = `<div class="space-y-4 max-w-full">${renderNuvemPalavras()}${renderGradeLinhaTempo()}${renderGraficoProducao()}</div>`;
         const area = $('#nuvemPalavrasArea');
         if (area) posicionarNuvem(area);
     }
@@ -291,5 +488,5 @@ window.TabLinhaTempo = (function () {
     // contarPalavras/contarPorCategoriaEAno também são usadas pela geração da
     // página pública (tab-publicar.js), com a lista de itens já filtrada por
     // privacidade — ver publicarWebOk() em app-core.js.
-    return { render, contarPalavras, contarPorCategoriaEAno, nivel, NIVEL_CLASSES };
+    return { render, contarPalavras, contarPorCategoriaEAno, nivel, NIVEL_CLASSES, contarProducaoPorTipoEAno, serieDeProducao };
 })();

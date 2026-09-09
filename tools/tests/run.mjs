@@ -55,6 +55,7 @@ import './specs/bancas-campos.mjs';
 import './specs/publicar-nuvem-tema.mjs';
 import './specs/rsc-config-campos.mjs';
 import './specs/rsc-memorial-campo-exportar.mjs';
+import './specs/producao-por-tipo.mjs';
 
 console.log('Rodando suíte de testes de regressão (Playwright)...\n');
 await runAll();

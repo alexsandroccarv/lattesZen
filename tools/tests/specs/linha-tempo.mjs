@@ -46,7 +46,7 @@ test('Linha do tempo conta os itens por categoria e ano (quadradinho com o total
     await page.waitForTimeout(300);
 
     const info = await page.evaluate(() => {
-        const cells = Array.from(document.querySelectorAll('#tab-linhatempo td [data-ano]'));
+        const cells = Array.from(document.querySelectorAll('#gradeLinhaTempo td [data-ano]'));
         const find = (ano) => cells.filter((c) => c.dataset.ano === String(ano)).map((c) => +c.dataset.qtd);
         return {
             anos2020: find(2020),
@@ -79,10 +79,10 @@ test('Rótulos das linhas sem número da categoria, anos em ordem decrescente e 
     await page.waitForTimeout(300);
 
     const info = await page.evaluate(() => {
-        const rotulos = Array.from(document.querySelectorAll('#tab-linhatempo tbody tr th')).map((th) => th.textContent.trim());
-        const anosColunas = Array.from(document.querySelectorAll('#tab-linhatempo thead th')).slice(1).map((th) => +th.textContent.trim());
-        const primeiroQuadradinho = document.querySelector('#tab-linhatempo td [data-ano]');
-        const legenda = document.querySelector('#tab-linhatempo .flex.items-center.gap-1.text-xs div');
+        const rotulos = Array.from(document.querySelectorAll('#gradeLinhaTempo tbody tr th')).map((th) => th.textContent.trim());
+        const anosColunas = Array.from(document.querySelectorAll('#gradeLinhaTempo thead th')).slice(1).map((th) => +th.textContent.trim());
+        const primeiroQuadradinho = document.querySelector('#gradeLinhaTempo td [data-ano]');
+        const legenda = document.querySelector('#gradeLinhaTempo .flex.items-center.gap-1.text-xs div');
         return { rotulos, anosColunas, quadradinhoClasse: primeiroQuadradinho.className, legendaClasse: legenda ? legenda.className : null };
     });
 

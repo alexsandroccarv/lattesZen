@@ -30,6 +30,30 @@ html.high-contrast button {
 .badge { display: inline-flex; align-items: center; gap: .25rem; font-size: .68rem;
          padding: .1rem .45rem; border-radius: 9999px; font-weight: 600; white-space: nowrap; }
 
+/* ---- Paleta categórica de gráficos (aba Linha do tempo, issue #10) ----
+   Cores fixas em CSS puro, não classes do Tailwind: um gráfico não pode
+   ficar sem cor (preto/sem sentido) se a CDN do Tailwind falhar ao carregar
+   — diferente do resto da UI, aqui a cor É o dado, não só decoração.
+   Ordem/valores vêm da paleta categórica validada (dataviz skill): segura
+   pra pares adjacentes (barras empilhadas) em claro e escuro. Usada tanto
+   no fill do SVG quanto no swatch (bg) da legenda/tabela em HTML. */
+.viz-cat-1 { fill: #2a78d6; background-color: #2a78d6; }
+.viz-cat-2 { fill: #eb6834; background-color: #eb6834; }
+.viz-cat-3 { fill: #1baf7a; background-color: #1baf7a; }
+.viz-cat-4 { fill: #eda100; background-color: #eda100; }
+.viz-cat-5 { fill: #e87ba4; background-color: #e87ba4; }
+.viz-cat-6 { fill: #008300; background-color: #008300; }
+.viz-cat-7 { fill: #4a3aa7; background-color: #4a3aa7; }
+.viz-cat-outros { fill: #8a8a86; background-color: #8a8a86; }
+.dark .viz-cat-1 { fill: #3987e5; background-color: #3987e5; }
+.dark .viz-cat-2 { fill: #d95926; background-color: #d95926; }
+.dark .viz-cat-3 { fill: #199e70; background-color: #199e70; }
+.dark .viz-cat-4 { fill: #c98500; background-color: #c98500; }
+.dark .viz-cat-5 { fill: #d55181; background-color: #d55181; }
+.dark .viz-cat-6 { fill: #008300; background-color: #008300; }
+.dark .viz-cat-7 { fill: #9085e9; background-color: #9085e9; }
+.dark .viz-cat-outros { fill: #9a9a95; background-color: #9a9a95; }
+
 /* ---- Rolagem suave em listas longas ---- */
 .scroll-area { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
 .scroll-area::-webkit-scrollbar { height: 6px; width: 6px; }
