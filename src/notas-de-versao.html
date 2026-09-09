@@ -145,6 +145,13 @@
             desde o marco atual.
         </p>
 
+        <section class="card" id="v0-7-22">
+          <h2><span class="pill">v0.7.22</span> <span class="data">09/09/2026</span></h2>
+          <ul>
+            <li><strong>CI: testes param de depender de CDNs externas</strong> (bastidores, sem efeito no app): uma CDN de estilo (Tailwind/Font Awesome/fonte Rawline) ficou lenta a partir dos runners do GitHub Actions, arrastando cada teste de frações de segundo para 30-60s e estourando o timeout do job. A suíte nunca precisou dessas CDNs de verdade (só lógica/DOM) — agora bloqueia todas de propósito — <a href="https://github.com/alexsandroccarv/latteszen/issues/119" target="_blank" rel="noopener">issue #119</a>.</li>
+          </ul>
+        </section>
+
         <section class="card" id="v0-7-21">
           <h2><span class="pill">v0.7.21</span> <span class="data">08/09/2026</span></h2>
           <ul>

@@ -111,11 +111,22 @@ export async function runAll() {
     const falhas = [];
     for (const { name, fn } of TESTS) {
         const context = await browser.newContext();
+        // Bloqueia as CDNs externas de estilo/ícone/fonte/analytics (Tailwind
+        // Play CDN, Font Awesome, fonte Rawline do governo, Google Tag
+        // Manager) — a suíte testa lógica/DOM, nunca a aparência visual, e
+        // uma dessas CDNs lenta ou fora do ar no runner de CI arrasta TODA a
+        // navegação (o evento "load" espera os <script>/<link> externos),
+        // multiplicando o tempo de CADA teste por dezenas de segundos (visto
+        // na prática: suíte inteira estourando os 20min de timeout do job,
+        // com cada teste sozinho levando 30-60s em vez de frações de
+        // segundo). abort() imediato deixa o comportamento igual em
+        // qualquer ambiente (sandbox, CI, local), sem depender da rede de
+        // terceiros — o app já lida bem com essas CDNs falhando (ex.:
+        // tw.onerror marca "no-tailwind" no <html>).
+        await context.route(/^https:\/\/(cdn\.tailwindcss\.com|cdnjs\.cloudflare\.com|cdngovbr-ds\.estaleiro\.serpro\.gov\.br|www\.googletagmanager\.com)\//, (route) => route.abort());
         // Marca o aviso de 1ª execução como já visto: com o Tailwind CDN
-        // bloqueado (sandbox), o modal fica sem CSS e não intercepta cliques,
-        // mas com o CDN acessível (CI/produção) ele vira um overlay real que
-        // bloqueia toda a página até o usuário clicar "OK" — sem isto, os
-        // testes travam esperando cliques em elementos cobertos pelo modal.
+        // bloqueado, o modal fica sem CSS e não intercepta cliques — mas sem
+        // isto ele ainda apareceria (sem estilo) sobre a página.
         await context.addInitScript(() => {
             try {
                 const raw = localStorage.getItem('lz_settings');
