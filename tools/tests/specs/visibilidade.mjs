@@ -1,15 +1,29 @@
 /* ==========================================================================
    Regressão: bloco de Visibilidade no formulário de item
    --------------------------------------------------------------------------
-   Deve ser só 2 checkboxes compactos ("Lattes", "Web") sob um rótulo
-   "Publicar", sem título nem parágrafos explicativos — e categorias 12+
-   ("Além do Lattes") devem mostrar só o checkbox "Web" (não são campos do
-   Lattes). O 3º eixo que existia ("Item visível (público) no Lattes") foi
-   retirado da UI — nunca teve efeito fora daqui (não ia pro XML, não
-   aparecia em nenhum outro lugar) — o campo continua sendo salvo como
-   sempre "Público" internamente, sem controle na tela.
+   Checkboxes compactos sob um rótulo "Publicar", sem título nem parágrafos
+   explicativos: "Lattes" e "Web" sempre; "usar para RSC" só com o módulo RSC
+   habilitado E o tipo elegível — mesmo checkbox #rscConta que antes vinha
+   com o rótulo "Contabilizar este item no RSC-PCCTAE" dentro do bloco RSC
+   (agora unificado aqui, os campos da camada RSC continuam em #rscBlock,
+   abaixo). Cada checkbox mostra o mesmo ícone usado na aba Conformidade
+   (fa-file-export/fa-globe/fa-award). Categorias 12+ ("Além do Lattes")
+   mostram só "Web" (não são campos do Lattes). O eixo "Item visível
+   (público) no Lattes" foi retirado da UI — nunca teve efeito fora daqui
+   (não ia pro XML, não aparecia em nenhum outro lugar) — o campo continua
+   sendo salvo como sempre "Público" internamente, sem controle na tela.
    ========================================================================== */
 import { test, assert, assertEqual } from '../harness.mjs';
+
+async function habilitarRsc(page) {
+    await page.evaluate(() => {
+        const s = JSON.parse(localStorage.getItem('lz_settings') || '{}');
+        s.rscEnabled = true;
+        localStorage.setItem('lz_settings', JSON.stringify(s));
+    });
+    await page.reload();
+    await page.waitForTimeout(500);
+}
 
 async function selectTipo(page, catText, tipoText) {
     await page.click('[data-tab="catalogar"]');
@@ -72,4 +86,51 @@ test('"visivelNoLattes" é sempre salvo como "Público" (sem controle na UI)', a
         return it ? it.visibilidade : null;
     });
     assertEqual(salvo && salvo.visivelNoLattes, 'Público', 'visivelNoLattes deveria continuar sendo salvo como "Público"');
+});
+
+test('Sem o módulo RSC habilitado, não aparece o checkbox "usar para RSC"', async ({ page, baseUrl }) => {
+    await page.goto(baseUrl + '/index.html');
+    await page.waitForTimeout(400);
+    await selectTipo(page, 'Formação', 'Formação complementar');
+    assertEqual(await page.locator('#visibilidadeBlock #rscConta').count(), 0, 'Sem RSC habilitado, "usar para RSC" não deveria existir');
+});
+
+test('Com o módulo RSC habilitado, "Publicar" ganha o 3º checkbox "usar para RSC" (com o ícone fa-award)', async ({ page, baseUrl }) => {
+    await page.goto(baseUrl + '/index.html');
+    await habilitarRsc(page);
+    await selectTipo(page, 'Formação', 'Formação complementar');
+    const info = await page.evaluate(() => {
+        const box = document.querySelector('#visibilidadeBlock');
+        const labels = Array.from(box.querySelectorAll('label')).map((l) => l.textContent.trim());
+        const rscLabel = Array.from(box.querySelectorAll('label')).find((l) => l.textContent.includes('usar para RSC'));
+        return {
+            qtdCheckbox: box.querySelectorAll('input[type=checkbox]').length,
+            labels,
+            rscConta: !!box.querySelector('#rscConta'),
+            iconeLattes: !!box.querySelector('label i.fa-file-export'),
+            iconeWeb: !!box.querySelector('label i.fa-globe'),
+            iconeRsc: rscLabel ? !!rscLabel.querySelector('i.fa-award') : false,
+        };
+    });
+    assertEqual(info.qtdCheckbox, 3, 'Com RSC habilitado (tipo elegível), deveria ter 3 checkboxes');
+    assertEqual(info.labels, ['Lattes', 'Web', 'usar para RSC'], 'Textos dos 3 checkboxes, nesta ordem');
+    assert(info.rscConta, 'O checkbox deveria ter o id "rscConta" (mesmo usado por collectRsc)');
+    assert(info.iconeLattes, 'Checkbox "Lattes" deveria ter o ícone fa-file-export (mesmo da Conformidade)');
+    assert(info.iconeWeb, 'Checkbox "Web" deveria ter o ícone fa-globe (mesmo da Conformidade)');
+    assert(info.iconeRsc, 'Checkbox "usar para RSC" deveria ter o ícone fa-award (mesmo da Conformidade)');
+});
+
+test('Marcar "usar para RSC" mostra os campos da camada RSC logo abaixo (em #rscBlock)', async ({ page, baseUrl }) => {
+    await page.goto(baseUrl + '/index.html');
+    await habilitarRsc(page);
+    await selectTipo(page, 'Formação', 'Formação complementar');
+
+    const escondidoAntes = await page.$eval('#rscFields', (el) => el.classList.contains('hidden'));
+    assert(escondidoAntes, 'Campos do RSC deveriam começar escondidos (checkbox desmarcado)');
+
+    await page.check('#rscConta');
+    await page.waitForTimeout(150);
+    const escondidoDepois = await page.$eval('#rscFields', (el) => el.classList.contains('hidden'));
+    assert(!escondidoDepois, 'Marcar "usar para RSC" deveria mostrar os campos da camada RSC');
+    assertEqual(await page.locator('#rscBlock label:has-text("Contabilizar")').count(), 0, 'O rótulo antigo "Contabilizar este item no RSC-PCCTAE" não deveria mais existir');
 });

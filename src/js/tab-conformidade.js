@@ -1,5 +1,5 @@
 /* ==========================================================================
-   lattesZen — Aba Conformidade (cartões de conformidade + lista de itens)
+   lattesZen — Aba Conformidade (seções Conformidade/Pendências/RSC + lista de itens)
    --------------------------------------------------------------------------
    Quarta aba extraída de app.js (ver issue de refatoração), mesmo padrão das
    anteriores — lê estado/utilidades de window.AppCore. `switchTab`, `buildForm`,
@@ -112,8 +112,9 @@ window.TabConformidade = (function () {
             </div>`;
     }
 
-    // Aba única (antigos "Catálogo" + "Relatório/Conformidade"): painel de
-    // conformidade (cartões + barra) + lista de itens com filtro/ordenação.
+    // Aba única (antigos "Catálogo" + "Relatório/Conformidade"): 4 seções —
+    // Conformidade (barras), Pendências (chips), RSC (se habilitado) e Itens
+    // (lista com filtro/ordenação, começa recolhida).
     function render() {
         const panel = $('#tab-conformidade');
         recalcularDuplicatas(); // os cartões/chips do topo usam count() logo abaixo — precisa estar pronto antes
@@ -130,20 +131,11 @@ window.TabConformidade = (function () {
         const wDesc = n => totalDesc ? Math.round(n / totalDesc * 100) : 0;
         const pctDesc = wDesc(descG);
 
-        const card = (key) => {
-            const m = VIEW_META[key];
-            const active = state.viewFilter === key;
-            return `<button type="button" data-view="${key}" title="Filtrar: ${m.titulo}"
-                class="text-left bg-white dark:bg-gray-800 border rounded-lg p-4 hover:shadow transition ${active ? `border-${m.cor}-500 ring-2 ring-${m.cor}-500/40` : 'border-gray-200 dark:border-gray-700'}">
-                <div class="flex items-center gap-2 text-${m.cor}-600 dark:text-${m.cor}-400">
-                    <i class="fa-solid ${m.icone} text-xl"></i><span class="text-2xl font-bold">${count(key)}</span>
-                </div>
-                <p class="text-sm font-semibold mt-1">${m.titulo}</p>
-                <p class="text-xs text-gray-500">${m.desc}</p>
-            </button>`;
-        };
         // Chip compacto (mesmo padrão do quadro do RSC) — usado no resumo de
-        // "outras pendências" abaixo, que não cabiam nos 4 cartões principais.
+        // Pendências. "Comprovados", "Não-Lattes", "Exportar p/ Lattes: não" e
+        // "Publicar na Web: não" não viram quadro/chip nenhum: são estados
+        // deliberados do usuário, não pendências de dado — cada um continua
+        // com seu ícone por item (ver itemCardHtml), só sumiram do resumo.
         const chip = (key) => {
             const m = VIEW_META[key];
             const active = state.viewFilter === key;
@@ -155,65 +147,73 @@ window.TabConformidade = (function () {
         };
 
         panel.innerHTML = `
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-                ${card('comprovados')}${card('semPdf')}${card('naoLattes')}${card('descObrig')}
+            <div class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-5">
+                <h3 class="font-bold text-sm flex items-center gap-2 mb-3"><i aria-hidden="true" class="fa-solid fa-chart-simple text-gray-500"></i> Conformidade</h3>
+                <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold"><i class="fa-solid fa-file-pdf text-gray-400 mr-1"></i>Conformidade documental (evidência)</span><span>${pct}% (${comprovados}/${total})</span></div>
+                        <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full ${pct === 100 ? 'bg-green-500' : 'bg-red-500'}" style="width:${pct}%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1"><span class="font-semibold"><i class="fa-solid fa-align-left text-gray-400 mr-1"></i>Descrição completa (campos)</span><span>${pctDesc}% (${descG}/${totalDesc})</span></div>
+                        <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex" title="Verde: completo · Amarelo: falta opcional · Vermelho: falta obrigatório">
+                            <div class="h-full bg-green-500" style="width:${wDesc(descG)}%"></div>
+                            <div class="h-full bg-amber-500" style="width:${wDesc(descA)}%"></div>
+                            <div class="h-full bg-red-500" style="width:${wDesc(descR)}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">${descG} completos · ${descA} falta opcional · ${descR} falta obrigatório</p>
+                    </div>
+                </div>
             </div>
 
             <div id="outrasPendenciasBox" class="bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-5">
-                <h3 class="font-bold text-sm flex items-center gap-2 mb-3"><i aria-hidden="true" class="fa-solid fa-list-check text-gray-500"></i> Outras pendências</h3>
-                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                    ${chip('chVermelho')}${chip('periodoInvalido')}${chip('anoImplausivel')}${chip('semInstituicao')}
-                    ${chip('semIdentificador')}${chip('semAutores')}${chip('possivelDuplicata')}
-                </div>
-            </div>
-
-            <div class="grid sm:grid-cols-2 gap-x-6 gap-y-3 mb-5">
-                <div>
-                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold"><i class="fa-solid fa-file-pdf text-gray-400 mr-1"></i>Conformidade documental (evidência)</span><span>${pct}% (${comprovados}/${total})</span></div>
-                    <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div class="h-full ${pct === 100 ? 'bg-green-500' : 'bg-red-500'}" style="width:${pct}%"></div>
-                    </div>
-                </div>
-                <div>
-                    <div class="flex justify-between text-sm mb-1"><span class="font-semibold"><i class="fa-solid fa-align-left text-gray-400 mr-1"></i>Descrição completa (campos)</span><span>${pctDesc}% (${descG}/${totalDesc})</span></div>
-                    <div class="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex" title="Verde: completo · Amarelo: falta opcional · Vermelho: falta obrigatório">
-                        <div class="h-full bg-green-500" style="width:${wDesc(descG)}%"></div>
-                        <div class="h-full bg-amber-500" style="width:${wDesc(descA)}%"></div>
-                        <div class="h-full bg-red-500" style="width:${wDesc(descR)}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-0.5">${descG} completos · ${descA} falta opcional · ${descR} falta obrigatório</p>
+                <h3 class="font-bold text-sm flex items-center gap-2 mb-3"><i aria-hidden="true" class="fa-solid fa-list-check text-gray-500"></i> Pendências</h3>
+                <div class="flex flex-wrap gap-2">
+                    ${chip('semPdf')}${chip('descObrig')}${chip('chVermelho')}${chip('periodoInvalido')}${chip('anoImplausivel')}
+                    ${chip('semInstituicao')}${chip('semIdentificador')}${chip('semAutores')}${chip('possivelDuplicata')}
                 </div>
             </div>
 
             ${state.rscEnabled ? rscConformidadeBoxHtml() : ''}
 
-            <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                <h2 class="text-lg font-bold flex items-center gap-2">
-                    <i aria-hidden="true" class="fa-solid fa-list text-govbr-600 dark:text-unifesp-400"></i>
-                    Itens <span id="itemCount" class="text-sm font-normal text-gray-500"></span>
-                    <span id="viewChip" class="hidden text-xs font-normal"></span>
-                </h2>
-                <div class="print:hidden flex items-center gap-2 flex-wrap">
-                    <label class="text-xs text-gray-500 flex items-center gap-1">
-                        <i aria-hidden="true" class="fa-solid fa-arrow-down-wide-short"></i> Ordenar por ano
-                        <select id="sortOrder" class="text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
-                            <option value="desc">Decrescente (recente → antigo)</option>
-                            <option value="asc">Crescente (antigo → recente)</option>
-                        </select>
-                    </label>
-                    <input id="filterBox" type="search" placeholder="Filtrar..."
-                           class="text-sm px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 w-full sm:w-56">
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mb-5">
+                <div class="px-4 py-3 bg-gray-100 dark:bg-gray-800 flex items-center justify-between gap-2 flex-wrap">
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-list text-govbr-600 dark:text-unifesp-400"></i>
+                        Itens <span id="itemCount" class="text-sm font-normal text-gray-500"></span>
+                        <span id="viewChip" class="hidden text-xs font-normal"></span>
+                    </h2>
+                    <div class="print:hidden flex items-center gap-2 flex-wrap">
+                        <label class="text-xs text-gray-500 flex items-center gap-1">
+                            <i aria-hidden="true" class="fa-solid fa-arrow-down-wide-short"></i> Ordenar por ano
+                            <select id="sortOrder" class="text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+                                <option value="desc">Decrescente (recente → antigo)</option>
+                                <option value="asc">Crescente (antigo → recente)</option>
+                            </select>
+                        </label>
+                        <input id="filterBox" type="search" placeholder="Filtrar..."
+                               class="text-sm px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 w-full sm:w-56">
+                    </div>
                 </div>
-            </div>
-            <div class="print:hidden flex gap-2 mb-3 flex-wrap">
-                <button id="btnExpandAll" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600">Expandir todas</button>
-                <button id="btnCollapseAll" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600">Recolher todas</button>
-                <button id="btnImprimir" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 ml-auto"><i class="fa-solid fa-print mr-1"></i> Imprimir / PDF</button>
-            </div>
-            <div id="itemList" class="space-y-3"></div>`;
+                <div class="print:hidden flex gap-2 px-3 pt-3 flex-wrap">
+                    <button id="btnExpandAll" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600">Expandir todas</button>
+                    <button id="btnCollapseAll" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600">Recolher todas</button>
+                    <button id="btnImprimir" class="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 ml-auto"><i class="fa-solid fa-print mr-1"></i> Imprimir / PDF</button>
+                </div>
+                <details id="itensSection" ${state.itensAberto ? 'open' : ''}>
+                    <summary class="cursor-pointer select-none px-3 py-2 mt-1 text-sm font-medium text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                        <i aria-hidden="true" class="fa-solid fa-angle-right text-xs text-gray-400"></i> Ver itens
+                    </summary>
+                    <div id="itemList" class="p-3 space-y-3"></div>
+                </details>
+            </div>`;
 
         $('#sortOrder').value = state.sortOrder || 'desc';
         renderItemList();
+        const itensSection = $('#itensSection');
+        if (itensSection) itensSection.addEventListener('toggle', () => { state.itensAberto = itensSection.open; });
         // Busca com debounce: currículos com centenas de itens reconstroem uma
         // árvore grande (categoria › tipo/instituição › itens) a cada chamada
         // — sem isso, cada tecla digitada refaz tudo na hora, o que fica
@@ -227,7 +227,12 @@ window.TabConformidade = (function () {
         $('#sortOrder').addEventListener('change', (e) => { state.sortOrder = e.target.value; renderItemList(); });
         $('#btnExpandAll').addEventListener('click', () => $$('#itemList details').forEach(d => d.open = true));
         $('#btnCollapseAll').addEventListener('click', () => $$('#itemList details').forEach(d => d.open = false));
-        $('#btnImprimir').addEventListener('click', () => window.print());
+        $('#btnImprimir').addEventListener('click', () => {
+            // Itens começa recolhido — impressão sem isto perderia a lista
+            // inteira (conteúdo de <details> fechado não imprime).
+            if (itensSection) { itensSection.open = true; state.itensAberto = true; }
+            window.print();
+        });
         // Delegação (em vez de ligar em cada botão individualmente): os itens
         // (ícones de status [data-view] e ações [data-act]: editar/duplicar/
         // excluir) ficam dentro de #itemList, que é reconstruído sozinho
@@ -242,6 +247,7 @@ window.TabConformidade = (function () {
                 if (viewBtn) {
                     const k = viewBtn.dataset.view;
                     state.viewFilter = (state.viewFilter === k) ? 'todos' : k; // clicar de novo limpa
+                    state.itensAberto = true; // filtrar só faz sentido vendo o resultado — abre Itens
                     render();
                     return;
                 }

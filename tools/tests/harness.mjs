@@ -85,6 +85,16 @@ export async function seedCatalog(page, baseUrl, items) {
     await page.waitForTimeout(500);
 }
 
+// A seção "Itens" da aba Conformidade começa recolhida (<details> fechado) —
+// abre sozinha ao clicar num chip/ícone de filtro, mas alguns testes
+// interagem direto com os controles de dentro dela (busca, ordenar) ou com um
+// ícone que só existe por item (não tem chip equivalente no topo), sem passar
+// por um clique de filtro antes. Um clique real do Playwright (page.click/
+// fill/check) exige o elemento visível — abrir programaticamente evita isso.
+export async function abrirItens(page) {
+    await page.evaluate(() => { const d = document.querySelector('#itensSection'); if (d) d.open = true; });
+}
+
 export function makeItem(typeKey, categoryKey, fields, extra) {
     const now = new Date().toISOString();
     return Object.assign({

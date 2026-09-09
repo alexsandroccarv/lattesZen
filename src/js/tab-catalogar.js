@@ -390,34 +390,35 @@ window.TabCatalogar = (function () {
             }).join('');
         }
         box.innerHTML = `
-        <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded px-3 py-2 space-y-2">
-            <label class="flex items-center gap-2 text-sm font-semibold"><i aria-hidden="true" class="fa-solid fa-award text-amber-600"></i>
-                <input type="checkbox" id="rscConta" ${rsc.conta ? 'checked' : ''}> Contabilizar este item no RSC-PCCTAE</label>
-            <div id="rscFields" class="${rsc.conta ? '' : 'hidden'} space-y-2">
-                <div class="relative"><label class="block text-xs font-semibold mb-1" for="rscCritFiltro">Critério específico (Anexos I–VI do Decreto)</label>
-                    <input type="text" id="rscCritFiltro" autocomplete="off" placeholder="Digite pra buscar (ex.: prêmio, capacitação, comissão...)"
-                           value="${esc(labelDoCriterio(rsc.criterio))}"
-                           class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
-                    <input type="hidden" id="rscCrit" value="${esc(rsc.criterio || '')}">
-                    <div id="rscCritLista" class="hidden absolute z-10 mt-1 w-full max-h-64 overflow-y-auto rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 shadow-lg"></div>
-                    <p class="text-[11px] text-gray-500 mt-0.5">Todos os critérios do decreto estão listados, agrupados por Requisito (I a VI). Digite acima para filtrar.</p></div>
-                <p class="text-[11px] text-gray-500"><i aria-hidden="true" class="fa-solid fa-calendar-days mr-1"></i>Para critérios por tempo (ano/mês), o período é calculado a partir dos campos de <strong>data</strong> do item acima (início/fim).</p>
-                <div class="grid sm:grid-cols-2 gap-2">
-                    <div id="rscPapelWrap" class="hidden"><label class="block text-xs font-semibold mb-1" for="rscPapel">Papel</label>
-                        <select id="rscPapel" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
-                            <option value="titular" ${rsc.papel !== 'substituto' ? 'selected' : ''}>Titular</option>
-                            <option value="substituto" ${rsc.papel === 'substituto' ? 'selected' : ''}>Substituto</option></select></div>
-                    <div id="rscQtdWrap" class="hidden"><label class="block text-xs font-semibold mb-1" for="rscQtd">Quantidade</label>
-                        <input id="rscQtd" type="number" min="0" step="1" value="${esc(rsc.quantidade != null ? rsc.quantidade : 1)}" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"></div>
-                </div>
-                <div><label class="block text-xs font-semibold mb-1" for="rscJust">Justificativa (para o memorial)</label>
-                    <textarea id="rscJust" rows="2" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">${esc(rsc.justificativa || '')}</textarea></div>
-                <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="rscUsado" ${rsc.jaUsado ? 'checked' : ''}> Já utilizado em concessão anterior (não conta no saldo)</label>
-                <p id="rscPontos" class="text-sm font-semibold text-amber-700 dark:text-amber-400"></p>
+        <div id="rscFields" class="${rsc.conta ? '' : 'hidden'} bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded px-3 py-2 space-y-2">
+            <div class="relative"><label class="block text-xs font-semibold mb-1" for="rscCritFiltro">Critério específico (Anexos I–VI do Decreto)</label>
+                <input type="text" id="rscCritFiltro" autocomplete="off" placeholder="Digite pra buscar (ex.: prêmio, capacitação, comissão...)"
+                       value="${esc(labelDoCriterio(rsc.criterio))}"
+                       class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+                <input type="hidden" id="rscCrit" value="${esc(rsc.criterio || '')}">
+                <div id="rscCritLista" class="hidden absolute z-10 mt-1 w-full max-h-64 overflow-y-auto rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 shadow-lg"></div>
+                <p class="text-[11px] text-gray-500 mt-0.5">Todos os critérios do decreto estão listados, agrupados por Requisito (I a VI). Digite acima para filtrar.</p></div>
+            <p class="text-[11px] text-gray-500"><i aria-hidden="true" class="fa-solid fa-calendar-days mr-1"></i>Para critérios por tempo (ano/mês), o período é calculado a partir dos campos de <strong>data</strong> do item acima (início/fim).</p>
+            <div class="grid sm:grid-cols-2 gap-2">
+                <div id="rscPapelWrap" class="hidden"><label class="block text-xs font-semibold mb-1" for="rscPapel">Papel</label>
+                    <select id="rscPapel" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+                        <option value="titular" ${rsc.papel !== 'substituto' ? 'selected' : ''}>Titular</option>
+                        <option value="substituto" ${rsc.papel === 'substituto' ? 'selected' : ''}>Substituto</option></select></div>
+                <div id="rscQtdWrap" class="hidden"><label class="block text-xs font-semibold mb-1" for="rscQtd">Quantidade</label>
+                    <input id="rscQtd" type="number" min="0" step="1" value="${esc(rsc.quantidade != null ? rsc.quantidade : 1)}" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"></div>
             </div>
+            <div><label class="block text-xs font-semibold mb-1" for="rscJust">Justificativa (para o memorial)</label>
+                <textarea id="rscJust" rows="2" class="w-full text-sm px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">${esc(rsc.justificativa || '')}</textarea></div>
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="rscUsado" ${rsc.jaUsado ? 'checked' : ''}> Já utilizado em concessão anterior (não conta no saldo)</label>
+            <p id="rscPontos" class="text-sm font-semibold text-amber-700 dark:text-amber-400"></p>
         </div>`;
 
+        // O checkbox "usar para RSC" mora no bloco de Visibilidade (renderizado
+        // ANTES deste, ver renderDynFields) — junto com "Lattes"/"Web" na
+        // linha "Publicar". Aqui só lemos o elemento pelo id (documento
+        // inteiro, não precisa estar dentro de #rscBlock).
         const conta = $('#rscConta'), fields = $('#rscFields'), critHidden = $('#rscCrit');
+        if (!conta) return; // não deveria acontecer (mesma condição de elegibilidade em renderVisibilidadeBlock)
         function recompute() {
             const crit = LzRSC.criterio(critHidden.value);
             $('#rscPapelWrap').classList.toggle('hidden', !(crit && crit.pontosSub != null));
@@ -495,13 +496,18 @@ window.TabCatalogar = (function () {
         recompute();
     }
 
-    // Camada de Visibilidade no formulário (abaixo do bloco RSC): dois eixos
-    // independentes — Exportar para Lattes (entra ou não no XML gerado) e
-    // Publicar na Web (entra ou não na página HTML própria). Nenhum dos dois
-    // afeta o RSC, que usa sua própria marcação (rsc.conta), isolada.
-    // "visivelNoLattes" (Público/Privado) existiu como um 3º eixo, mas nunca
-    // teve efeito nenhum fora daqui (não vai pro XML, não aparece em nenhum
-    // outro lugar) — virou sempre "Público" internamente, sem controle na UI.
+    // Camada de Visibilidade no formulário (antes do bloco RSC, ver
+    // renderDynFields): três eixos independentes — Exportar para Lattes
+    // (entra ou não no XML gerado), Publicar na Web (entra ou não na página
+    // HTML própria) e "usar para RSC" (mesmo checkbox #rscConta que antes
+    // vinha com o rótulo "Contabilizar este item no RSC-PCCTAE" dentro do
+    // próprio bloco RSC — unificado aqui na mesma linha "Publicar" pra não
+    // duplicar o conceito). Cada checkbox mostra o mesmo ícone usado na aba
+    // Conformidade para aquele estado (fa-file-export/fa-globe/fa-award).
+    // "visivelNoLattes" (Público/Privado) existiu como um eixo à parte, mas
+    // nunca teve efeito nenhum fora daqui (não vai pro XML, não aparece em
+    // nenhum outro lugar) — virou sempre "Público" internamente, sem
+    // controle na UI.
     function renderVisibilidadeBlock(item) {
         const box = $('#visibilidadeBlock'); if (!box) return;
         const typeKey = $('#selTipo') ? $('#selTipo').value : '';
@@ -511,12 +517,15 @@ window.TabCatalogar = (function () {
         const exportarLattes = v.exportarLattes !== false;
         const publicarWeb = v.publicarWeb !== false;
         const doLattes = elegivelAoLattes(typeKey, catKey);
+        const rsc = (item && item.rsc) || {};
+        const doRsc = state.rscEnabled && !LattesTypes.isNaoLattesType(typeKey);
 
         box.innerHTML = `
         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm bg-sky-50 dark:bg-sky-900/10 border border-sky-200 dark:border-sky-800 rounded px-3 py-2">
             <span class="font-semibold">Publicar</span>
-            ${doLattes ? `<label class="flex items-center gap-1.5"><input type="checkbox" id="visExportarLattes" ${exportarLattes ? 'checked' : ''}> Lattes</label>` : ''}
-            <label class="flex items-center gap-1.5"><input type="checkbox" id="visPublicarWeb" ${publicarWeb ? 'checked' : ''}> Web</label>
+            ${doLattes ? `<label class="flex items-center gap-1.5"><input type="checkbox" id="visExportarLattes" ${exportarLattes ? 'checked' : ''}> <i aria-hidden="true" class="fa-solid fa-file-export"></i> Lattes</label>` : ''}
+            <label class="flex items-center gap-1.5"><input type="checkbox" id="visPublicarWeb" ${publicarWeb ? 'checked' : ''}> <i aria-hidden="true" class="fa-solid fa-globe"></i> Web</label>
+            ${doRsc ? `<label class="flex items-center gap-1.5"><input type="checkbox" id="rscConta" ${rsc.conta ? 'checked' : ''}> <i aria-hidden="true" class="fa-solid fa-award"></i> usar para RSC</label>` : ''}
         </div>`;
 
         const expChk = $('#visExportarLattes');
@@ -651,8 +660,8 @@ window.TabCatalogar = (function () {
 
             <div id="camposPanel" class="hidden lg:col-span-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
                 <div id="dynFields" class="space-y-3"></div>
-                <div id="rscBlock" class="space-y-3"></div>
                 <div id="visibilidadeBlock" class="space-y-3"></div>
+                <div id="rscBlock" class="space-y-3"></div>
 
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold" for="notasGerais">Anotações gerais</label>
@@ -767,8 +776,8 @@ window.TabCatalogar = (function () {
             wireDynamicLabels($('#dynFields'), def);     // rótulos que mudam conforme outro campo
             wireRepeater($('#dynFields'), def);          // listas (Equipe, Financiadores, Produção C&T...)
             wireCrossrefButton($('#dynFields'), def);    // "Buscar metadados" no campo DOI (Crossref)
-            renderRscBlock(item);                        // camada RSC (se habilitado)
-            renderVisibilidadeBlock(item);                // Exportar Lattes / visibilidade / Publicar na Web
+            renderVisibilidadeBlock(item);                // Publicar (Lattes/Web/usar para RSC)
+            renderRscBlock(item);                          // campos RSC (aparecem com "usar para RSC" marcado)
             const semEvidencia = !!(def && def.noEvidence);
             $('#evidenceBlock').style.display = semEvidencia ? 'none' : '';
             if (semEvidencia) { state.evEditing = []; renderEvList(); clearPdf(); }

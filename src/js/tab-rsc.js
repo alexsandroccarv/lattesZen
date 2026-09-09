@@ -142,7 +142,7 @@ window.TabRsc = (function () {
                 <summary class="cursor-pointer px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-sm font-medium">${esc(LzRSC.REQUISITOS[r] || 'Sem requisito')} <span class="text-xs text-gray-500">— ${pr.itens} ${pr.itens === 1 ? 'item' : 'itens'} · ${pr.criterios.size} ${pr.criterios.size === 1 ? 'critério' : 'critérios'} · <strong class="text-amber-700 dark:text-amber-400 tabular-nums">${String(pr.pontos).replace('.', ',')} pts</strong></span></summary>
                 <div class="p-2">${criteriosHtml}</div>
             </details>`;
-        }).join('') || `<p class="text-sm text-gray-500 italic">Nenhum item marcado para o RSC ainda. Em Catalogar, marque “Contabilizar este item no RSC”.</p>`;
+        }).join('') || `<p class="text-sm text-gray-500 italic">Nenhum item marcado para o RSC ainda. Em Catalogar, marque “usar para RSC” na linha “Publicar”.</p>`;
 
         panel.innerHTML = `
             ${rscCfgSectionHtml(cfg)}
