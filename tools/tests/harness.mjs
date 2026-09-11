@@ -118,7 +118,6 @@ export async function runAll() {
     });
 
     let passed = 0, failed = 0;
-    let debugouRede = false; // diagnóstico temporário (issue #119) — só no 1º teste
     const falhas = [];
     for (const { name, fn } of TESTS) {
         const context = await browser.newContext();
@@ -149,18 +148,6 @@ export async function runAll() {
             } catch (_) {}
         });
         const page = await context.newPage();
-        // Diagnóstico temporário (issue #119): bloquear as CDNs conhecidas
-        // não resolveu a lentidão (~30-60s por teste em vez de frações de
-        // segundo) — loga toda requisição/resposta do 1º teste, com
-        // timestamp, pra achar exatamente o que trava.
-        if (!debugouRede) {
-            debugouRede = true;
-            const t0 = Date.now();
-            const dt = () => ((Date.now() - t0) / 1000).toFixed(2) + 's';
-            page.on('request', (r) => console.log(`    [rede ${dt()}] -> ${r.method()} ${r.url()}`));
-            page.on('requestfinished', (r) => console.log(`    [rede ${dt()}] <- OK ${r.url()}`));
-            page.on('requestfailed', (r) => console.log(`    [rede ${dt()}] <- FALHOU ${r.url()} (${r.failure() && r.failure().errorText})`));
-        }
         // O timeout padrão do Playwright (30s) pra ações/navegação já causou
         // falhas em cadeia no CI: o runner às vezes fica momentaneamente
         // lento por alguns minutos (contenção de CPU do runner hospedado,
