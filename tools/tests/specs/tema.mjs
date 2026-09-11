@@ -27,6 +27,16 @@ test('Seletor de tema existe em Configurações, com "Padrão" pré-selecionado'
     assert(!htmlClasses.includes('lz-theme'), 'Sem tema escolhido, a classe lz-theme não deveria estar presente');
 });
 
+test('Lista de temas corresponde exatamente à do templateZen (+ "Padrão")', async ({ page, baseUrl }) => {
+    await abrirConfig(page, baseUrl);
+    const valores = await page.$$eval('#themeSelect option', (opts) => opts.map((o) => o.value));
+    assertEqual(valores, [
+        'padrao', 'catppuccin-latte', 'catppuccin-mocha', 'dracula',
+        'github-light', 'github-dark', 'govbr', 'rose-pine-dawn',
+        'solarized-light', 'solarized-dark',
+    ], `Lista de temas incorreta — obtida: ${JSON.stringify(valores)}`);
+});
+
 test('Escolher um tema aplica data-lz-theme + classe lz-theme e persiste', async ({ page, baseUrl }) => {
     await abrirConfig(page, baseUrl);
     await page.selectOption('#themeSelect', 'dracula');
@@ -48,16 +58,16 @@ test('Escolher um tema aplica data-lz-theme + classe lz-theme e persiste', async
 
 test('Tema persiste em outras páginas (ex.: ajuda.html), não só no index.html', async ({ page, baseUrl }) => {
     await page.goto(baseUrl + '/index.html');
-    await page.evaluate(() => localStorage.setItem('lz_tema_preset', 'nord'));
+    await page.evaluate(() => localStorage.setItem('lz_tema_preset', 'rose-pine-dawn'));
     await page.goto(baseUrl + '/ajuda.html');
     await page.waitForTimeout(300);
     const temaAttr = await page.$eval('html', (el) => el.getAttribute('data-lz-theme'));
-    assertEqual(temaAttr, 'nord', 'O tema escolhido deveria se aplicar em qualquer página, não só index.html');
+    assertEqual(temaAttr, 'rose-pine-dawn', 'O tema escolhido deveria se aplicar em qualquer página, não só index.html');
 });
 
 test('Voltar para "Padrão" remove a classe/atributo de tema', async ({ page, baseUrl }) => {
     await abrirConfig(page, baseUrl);
-    await page.selectOption('#themeSelect', 'monokai');
+    await page.selectOption('#themeSelect', 'catppuccin-mocha');
     await page.waitForTimeout(150);
     await page.selectOption('#themeSelect', 'padrao');
     await page.waitForTimeout(150);

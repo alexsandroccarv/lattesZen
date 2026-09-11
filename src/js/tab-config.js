@@ -112,22 +112,15 @@ window.TabConfig = (function () {
     const THEME_DEFAULT = 'padrao'; // lattesZen mantém o visual gov.br por padrão
     const THEME_PRESETS = [
         { value: 'padrao', label: 'Padrão (gov.br)', font: "system-ui,sans-serif" },
-        { value: 'dracula', label: 'Dracula', font: "'Fira Sans',system-ui,sans-serif" },
-        { value: 'solarized-dark', label: 'Solarized Dark', font: "'Source Sans 3',system-ui,sans-serif" },
-        { value: 'solarized-light', label: 'Solarized Light', font: "'Source Sans 3',system-ui,sans-serif" },
-        { value: 'govbr', label: 'gov.br (padrão em tema fixo)', font: "'Rawline',system-ui,sans-serif" },
-        { value: 'nord', label: 'Nord', font: "'Inter',system-ui,sans-serif" },
-        { value: 'gruvbox', label: 'Gruvbox Dark', font: "'IBM Plex Sans',system-ui,sans-serif" },
-        { value: 'tokyo-night', label: 'Tokyo Night', font: "'Manrope',system-ui,sans-serif" },
-        { value: 'one-dark', label: 'One Dark', font: "'Inter',system-ui,sans-serif" },
-        { value: 'monokai', label: 'Monokai', font: "'DM Sans',system-ui,sans-serif" },
+        { value: 'catppuccin-latte', label: 'Catppuccin Latte', font: "'Nunito',system-ui,sans-serif" },
         { value: 'catppuccin-mocha', label: 'Catppuccin Mocha', font: "'Nunito',system-ui,sans-serif" },
-        { value: 'github-dark', label: 'GitHub Dark', font: "system-ui,sans-serif" },
+        { value: 'dracula', label: 'Drácula', font: "'Fira Sans',system-ui,sans-serif" },
         { value: 'github-light', label: 'GitHub Light', font: "system-ui,sans-serif" },
-        { value: 'ayu', label: 'Ayu', font: "'Work Sans',system-ui,sans-serif" },
-        { value: 'rose-pine', label: 'Rosé Pine', font: "'Quicksand',system-ui,sans-serif" },
-        { value: 'everforest', label: 'Everforest', font: "'Cabin',system-ui,sans-serif" },
-        { value: 'material', label: 'Material', font: "'Roboto',system-ui,sans-serif" },
+        { value: 'github-dark', label: 'GitHub Dark', font: "system-ui,sans-serif" },
+        { value: 'govbr', label: 'gov.br', font: "'Rawline',system-ui,sans-serif" },
+        { value: 'rose-pine-dawn', label: 'Rosé Pine Dawn', font: "'Quicksand',system-ui,sans-serif" },
+        { value: 'solarized-light', label: 'Solarized Light', font: "'Source Sans 3',system-ui,sans-serif" },
+        { value: 'solarized-dark', label: 'Solarized Dark', font: "'Source Sans 3',system-ui,sans-serif" },
     ];
     function themeSectionHtml() {
         return `
