@@ -123,19 +123,22 @@ export async function runAll() {
         const context = await browser.newContext();
         // Bloqueia as CDNs externas de estilo/ícone/fonte/analytics (Tailwind
         // Play CDN, Font Awesome, fonte Rawline do governo, Google Tag
-        // Manager) e o selo de DOI do Zenodo no rodapé (imagem, carregada
-        // incondicionalmente, achada só ao instrumentar a rede — nenhum dos
-        // 4 hosts acima era ela) — a suíte testa lógica/DOM, nunca a
-        // aparência visual, e um desses recursos lento ou fora do ar no
-        // runner de CI arrasta TODA a navegação (o evento "load" espera os
-        // <script>/<link>/<img> externos), multiplicando o tempo de CADA
-        // teste por dezenas de segundos (visto na prática: suíte inteira
-        // estourando os 20min de timeout do job, com cada teste sozinho
-        // levando 30-60s em vez de frações de segundo). abort() imediato
-        // deixa o comportamento igual em qualquer ambiente (sandbox, CI,
-        // local), sem depender da rede de terceiros — o app já lida bem com
-        // essas CDNs falhando (ex.: tw.onerror marca "no-tailwind" no <html>).
-        await context.route(/^https:\/\/(cdn\.tailwindcss\.com|cdnjs\.cloudflare\.com|cdngovbr-ds\.estaleiro\.serpro\.gov\.br|www\.googletagmanager\.com|zenodo\.org)\//, (route) => route.abort());
+        // Manager, Google Fonts — usada pelo seletor de Tema em Configurações
+        // para carregar a fonte de cada paleta sob demanda) e o selo de DOI
+        // do Zenodo no rodapé (imagem, carregada incondicionalmente, achada
+        // só ao instrumentar a rede — nenhum dos outros hosts era ela) — a
+        // suíte testa lógica/DOM, nunca a aparência visual, e um desses
+        // recursos lento ou fora do ar no runner de CI arrasta TODA a
+        // navegação (o evento "load" espera os <script>/<link>/<img>
+        // externos), multiplicando o tempo de CADA teste por dezenas de
+        // segundos (visto na prática: suíte inteira estourando os 20min de
+        // timeout do job, com cada teste sozinho levando 30-60s em vez de
+        // frações de segundo). abort() imediato deixa o comportamento igual
+        // em qualquer ambiente (sandbox, CI, local), sem depender da rede de
+        // terceiros — o app já lida bem com essas CDNs falhando (ex.:
+        // tw.onerror marca "no-tailwind" no <html>; sem a fonte do tema, o
+        // fallback do sistema em --lz-font ainda deixa tudo legível).
+        await context.route(/^https:\/\/(cdn\.tailwindcss\.com|cdnjs\.cloudflare\.com|cdngovbr-ds\.estaleiro\.serpro\.gov\.br|www\.googletagmanager\.com|zenodo\.org|fonts\.googleapis\.com|fonts\.gstatic\.com)\//, (route) => route.abort());
         // Marca o aviso de 1ª execução como já visto: com o Tailwind CDN
         // bloqueado, o modal fica sem CSS e não intercepta cliques — mas sem
         // isto ele ainda apareceria (sem estilo) sobre a página.
