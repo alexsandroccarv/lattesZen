@@ -7,8 +7,8 @@ window.APP_CONFIG = {
     // Os dois primeiros números são atualizados manualmente; o terceiro (2
     // dígitos) é incrementado a cada issue fechada no GitHub — ver política
     // completa em CLAUDE.md e o histórico em notas-de-versao.html.
-    version: 'v0.7.25',
-    lastModified: '09/09/2026',
+    version: 'v0.7.26',
+    lastModified: '11/09/2026',
     author: {
         nome: 'Alexsandro Cardoso Carvalho',
         github: 'https://github.com/alexsandroccarv',
@@ -28,7 +28,6 @@ window.APP_CONFIG = {
         // (Configurações → Exportar catálogo), e um token nunca deveria ir
         // parar num arquivo que o usuário pode compartilhar/enviar a outro lugar.
         deployTokens: 'lz_deploy_tokens',
-        theme: 'tema',
         highContrast: 'altoContraste',
     },
     // Google Drive (armazenamento remoto opcional, alternativo à pasta local).

@@ -426,24 +426,10 @@
     window.AppCore.switchTab = switchTab;
 
     /* =====================================================================
-       Rodapé: tema e alto contraste
+       Rodapé: alto contraste e escala de fonte
        ===================================================================== */
     function wireFooterToggles() {
         const htmlEl = document.documentElement;
-        const tt = $('#themeToggle');
-        const syncTheme = () => {
-            const dark = htmlEl.classList.contains('dark');
-            tt.setAttribute('aria-pressed', dark ? 'true' : 'false');
-            tt.querySelector('i').className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-            $('#themeToggleLabel').textContent = dark ? 'Tema claro' : 'Tema escuro';
-        };
-        syncTheme();
-        tt.addEventListener('click', () => {
-            htmlEl.classList.toggle('dark');
-            localStorage.setItem(APP_CONFIG.storageKeys.theme, htmlEl.classList.contains('dark') ? 'dark' : 'light');
-            syncTheme();
-        });
-
         const hc = $('#highContrastToggle');
         const syncHC = () => hc.setAttribute('aria-pressed', htmlEl.classList.contains('high-contrast') ? 'true' : 'false');
         syncHC();
@@ -578,7 +564,6 @@
         // Cabeçalho / rodapé dinâmicos
         document.title = APP_CONFIG.name;
         $('#appVersion').textContent = APP_CONFIG.version;
-        $('#lastModDate').textContent = APP_CONFIG.lastModified;
 
         wireFooterToggles();
         wireKeyboardShortcuts();

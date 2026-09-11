@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>lattesZen — Ajuda</title>
+    <title>lattesZen — Sobre</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1351B4">
@@ -70,31 +70,16 @@
       .help-doc .lead{color:var(--hdoc-muted);margin:0 0 1.5em}
       .help-doc a{color:var(--hdoc-accent);text-decoration:none}
       .help-doc a:hover{text-decoration:underline}
-      .help-doc nav.toc{background:var(--hdoc-surface);border:1px solid var(--hdoc-line);border-radius:10px;padding:14px 18px;margin-bottom:28px}
-      .help-doc nav.toc h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--hdoc-muted);margin:0 0 8px}
-      .help-doc nav.toc ol{margin:0;padding-left:1.2em;columns:2;column-gap:28px}
-      .help-doc nav.toc li{margin:3px 0;break-inside:avoid}
       .help-doc section.card{background:var(--hdoc-surface);border:1px solid var(--hdoc-line);border-radius:10px;padding:20px 22px;margin-bottom:22px}
       .help-doc section.card h2{margin-top:0;font-size:1.25rem;display:flex;align-items:center;gap:10px}
-      .help-doc .step-num{display:inline-flex;align-items:center;justify-content:center;width:1.6em;height:1.6em;border-radius:50%;background:#1351b4;color:#fff;font-size:.85rem;font-weight:700;flex-shrink:0}
       .help-doc h3{font-size:1.02rem;margin:1.2em 0 .3em}
       .help-doc code{background:var(--hdoc-code);padding:.1em .4em;border-radius:4px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
       .help-doc ul,.help-doc ol{padding-left:1.4em}
-      .help-doc li{margin:.25em 0}
-      .help-doc .note,.help-doc .warn,.help-doc .ok{border-left:4px solid;border-radius:6px;padding:12px 16px;margin:14px 0;font-size:.95rem}
+      .help-doc li{margin:.3em 0}
+      .help-doc .note,.help-doc .ok{border-left:4px solid;border-radius:6px;padding:12px 16px;margin:14px 0;font-size:.95rem}
       .help-doc .note{background:var(--hdoc-note-bg);border-color:var(--hdoc-note-line)}
-      .help-doc .warn{background:var(--hdoc-warn-bg);border-color:var(--hdoc-warn-line)}
       .help-doc .ok{background:var(--hdoc-ok-bg);border-color:var(--hdoc-ok-line)}
-      .help-doc .tag{display:inline-block;background:var(--hdoc-chip);color:var(--hdoc-chipink);border-radius:20px;padding:1px 10px;font-size:.8rem;font-weight:600;margin:0 2px}
-      .help-doc .pill{display:inline-block;background:#0C326F;color:#fff;border-radius:6px;padding:2px 8px;font-size:.78rem;font-weight:600}
-      html.dark .help-doc .pill{background:#1351B4}
-      .help-doc .guide-grid{display:grid;grid-template-columns:1fr;gap:16px;margin:8px 0}
-      @media (min-width:640px){.help-doc .guide-grid{grid-template-columns:1fr 1fr}}
-      .help-doc .guide-card{display:block;background:var(--hdoc-surface);border:1px solid var(--hdoc-line);border-radius:10px;padding:18px 20px;transition:border-color .15s,transform .15s}
-      .help-doc .guide-card:hover{border-color:var(--hdoc-accent);transform:translateY(-1px);text-decoration:none}
-      .help-doc .guide-card h3{margin:.3em 0 .3em;font-size:1.1rem;display:flex;align-items:center;gap:8px;color:var(--hdoc-text)}
-      .help-doc .guide-card p{margin:0;font-size:.92rem;color:var(--hdoc-muted)}
-      .help-doc .guide-card .go{display:inline-block;margin-top:10px;font-size:.85rem;font-weight:600;color:var(--hdoc-accent)}
+      .help-doc .tag{display:inline-block;background:var(--hdoc-chip);color:var(--hdoc-chipink);border-radius:20px;padding:1px 10px;font-size:.8rem;font-weight:600;margin:0 4px 4px 0}
     </style>
 </head>
 <body class="font-sans bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen flex flex-col transition-colors duration-300">
@@ -123,6 +108,9 @@
         <nav class="bg-white dark:bg-gray-800 border-t border-govbr-700/20 dark:border-gray-700 px-2" aria-label="Seções">
             <div class="max-w-5xl mx-auto flex gap-1 overflow-x-auto">
                 <a href="index.html" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-govbr-600 dark:hover:text-unifesp-400 whitespace-nowrap">
+                    <i aria-hidden="true" class="fa-solid fa-house mr-1"></i> Início
+                </a>
+                <a href="index.html" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-govbr-600 dark:hover:text-unifesp-400 whitespace-nowrap">
                     <i aria-hidden="true" class="fa-solid fa-file-circle-plus mr-1"></i> Catalogar
                 </a>
                 <a href="index.html" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-govbr-600 dark:hover:text-unifesp-400 whitespace-nowrap">
@@ -135,7 +123,7 @@
                     <i aria-hidden="true" class="fa-solid fa-gear mr-1"></i> Configurações
                 </a>
                 <span class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-govbr-600 dark:border-unifesp-400 text-govbr-700 dark:text-unifesp-400 font-bold whitespace-nowrap" aria-current="page">
-                    <i aria-hidden="true" class="fa-solid fa-circle-question mr-1"></i> Ajuda
+                    <i aria-hidden="true" class="fa-solid fa-circle-info mr-1"></i> Sobre
                 </span>
             </div>
         </nav>
@@ -144,66 +132,43 @@
     <!-- ============================ CONTEÚDO ============================ -->
     <main class="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
       <div class="help-doc">
-        <h1>Ajuda — Início Rápido</h1>
-        <p class="lead">Tudo que você precisa para organizar o Currículo Lattes com o lattesZen, num único lugar. Se você já conhece o app, vá direto para um dos <a href="#guias">dois guias completos</a> abaixo.</p>
+        <p style="margin:0 0 10px"><a href="index.html">← Voltar ao lattesZen</a></p>
+        <h1><i class="fa-solid fa-circle-info text-govbr-600 dark:text-unifesp-400"></i> Sobre o lattesZen</h1>
+        <p class="lead">Um organizador do Currículo Lattes que roda inteiramente no seu navegador — sem servidor, sem conta e sem enviar seus dados para lugar nenhum.</p>
 
-        <div class="note">
-          <strong>Em uma frase:</strong> você escolhe uma <em>pasta no seu computador</em> (ou o Google Drive) → importa itens do Lattes/ORCID/BibTeX → anexa os PDFs de comprovação → acompanha o que falta na aba <em>Conformidade</em> → e publica o currículo como uma página pública.
-        </div>
-
-        <nav class="toc">
-          <h2>Nesta página</h2>
-          <ol>
-            <li><a href="#oque">O que é o lattesZen</a></li>
-            <li><a href="#passos">Primeiros passos (5 minutos)</a></li>
-            <li><a href="#guias">Guias completos</a></li>
-            <li><a href="#faq">Perguntas rápidas</a></li>
-          </ol>
-        </nav>
-
-        <section class="card" id="oque">
-          <h2>O que é o lattesZen</h2>
-          <p>O <strong>lattesZen</strong> é um organizador de Currículo Lattes que roda inteiramente no seu navegador — <strong>nenhum dado sai do seu computador</strong>. Ele ajuda você a manter os itens do currículo organizados, comprovados (com PDF anexado) e prontos para publicação, além de simular o <strong>RSC-PCCTAE</strong> (Reconhecimento de Saberes e Competências) para servidores técnico-administrativos em educação.</p>
+        <section class="card">
+          <h2><i class="fa-solid fa-bullseye text-govbr-600 dark:text-unifesp-400"></i> O que é</h2>
+          <p>O lattesZen ajuda pesquisadores(as), docentes e servidores(as) a <strong>catalogar, comprovar e publicar</strong> a produção do Currículo Lattes, mantendo os dados <strong>no seu navegador e numa pasta que você escolhe</strong> no seu próprio computador (ou, opcionalmente, no seu Google Drive) — nunca num servidor de terceiros.</p>
+          <p>É um projeto de <strong>software livre</strong> (licença AGPLv3), com código aberto no GitHub, mantido de forma independente por <a href="https://github.com/alexsandroccarv" target="_blank" rel="noopener">Alexsandro Cardoso Carvalho</a>.</p>
         </section>
 
-        <section class="card" id="passos">
-          <h2>Primeiros passos (5 minutos)</h2>
-          <ol>
-            <li><strong>Escolha uma pasta</strong> em <span class="pill">Configurações → Diretório de armazenamento</span> (ou conecte o Google Drive, se preferir acesso de mais de um dispositivo).</li>
-            <li><strong>Traga seus itens</strong>: importe o XML exportado da Plataforma Lattes, ou busque suas obras por <strong>ORCID iD</strong>, ou importe um arquivo <strong>BibTeX/RIS</strong> — tudo em <span class="pill">Configurações</span>.</li>
-            <li><strong>Anexe as evidências</strong> (PDFs) a cada item na aba <span class="pill">Catalogar</span>, usando a Caixa de Entrada ou arrastando o arquivo direto para o formulário.</li>
-            <li><strong>Confira o que falta</strong> na aba <span class="pill">Conformidade</span> — comprovação e campos obrigatórios, tudo num só painel.</li>
-            <li><strong>Publique</strong> quando quiser, em <span class="pill">Publicar na Web</span>: gera uma página pública do currículo, autossuficiente, a partir da mesma base.</li>
-          </ol>
-          <div class="warn"><strong>Navegador:</strong> a gravação automática em pasta usa a <em>File System Access API</em>, disponível no <strong>Google Chrome</strong> e no <strong>Microsoft Edge</strong> (computador). Em outros navegadores, ou usando o Google Drive, o app funciona normalmente.</div>
+        <section class="card">
+          <h2><i class="fa-solid fa-list-check text-govbr-600 dark:text-unifesp-400"></i> Principais recursos</h2>
+          <ul>
+            <li><strong>Catalogar</strong> itens em todas as categorias do Lattes (Formação, Atuação, Projetos, Produções, Patentes/Registros, Inovação, Educação e Popularização de C&T, Eventos, Orientações, Bancas), com máxima correspondência de campos com a Plataforma Lattes.</li>
+            <li><strong>Importar o XML do Lattes</strong> no formato oficial, com deduplicação — reimportar não cria itens repetidos.</li>
+            <li><strong>Anexar evidências</strong> (PDFs, imagens) a cada item, gravadas localmente por categoria.</li>
+            <li><strong>Conformidade</strong>: painel que mostra o que já está comprovado, o que falta de evidência e o que falta de campo obrigatório.</li>
+            <li><strong>Publicar na Web</strong>: gera uma página HTML pública do currículo, pronta para hospedar.</li>
+            <li><strong>Módulo RSC-PCCTAE</strong> (opcional): simulação de pontuação e nível a partir dos itens catalogados.</li>
+          </ul>
         </section>
 
-        <section class="card" id="guias">
-          <h2>Guias completos</h2>
-          <p>Para o passo a passo detalhado de cada fluxo, escolha um guia:</p>
-          <div class="guide-grid">
-            <a class="guide-card" href="ajuda-lattes.html">
-              <h3><i aria-hidden="true" class="fa-solid fa-file-lines"></i> Currículo Lattes</h3>
-              <p>Diretório de arquivos, Caixa de Entrada, importação do XML/ORCID/BibTeX-RIS, preenchimento dos campos, atalhos de teclado, a aba Conformidade, publicação da página pública, backup e compatibilidade com o Lattes.</p>
-              <span class="go">Abrir guia do Lattes →</span>
-            </a>
-            <a class="guide-card" href="ajuda-rsc.html">
-              <h3><i aria-hidden="true" class="fa-solid fa-award"></i> RSC-PCCTAE</h3>
-              <p>Como habilitar o módulo, marcar itens com um critério do RSC, as categorias 20/21 (sem correspondência no Lattes), o simulador de pontuação e nível, e a geração do memorial, planilha e formulário oficial (.docx).</p>
-              <span class="go">Abrir guia do RSC →</span>
-            </a>
-          </div>
+        <section class="card">
+          <h2><i class="fa-solid fa-shield-halved text-govbr-600 dark:text-unifesp-400"></i> Privacidade por padrão</h2>
+          <div class="ok">Sem servidor próprio, sem cadastro, sem login. Tudo o que você cadastra fica no seu navegador e, por padrão, numa pasta do seu computador — nada é enviado para nós.</div>
+          <p>Detalhes completos em <a href="privacidade.html">Política de Privacidade</a> e <a href="termodeuso.html">Termo de uso</a>.</p>
         </section>
 
-        <section class="card" id="faq">
-          <h2>Perguntas rápidas</h2>
-          <h3>Meus dados ficam salvos onde?</h3>
-          <p>Na pasta que você escolher no seu próprio computador (ou, opcionalmente, numa pasta dedicada no seu Google Drive). O lattesZen não tem servidor próprio nem envia seus dados para fora do navegador.</p>
-          <h3>Preciso reescrever tudo que já tenho no Lattes?</h3>
-          <p>Não — importe o XML exportado da Plataforma Lattes (ou suas obras via ORCID/BibTeX/RIS) e o app traz os itens automaticamente, sem duplicar em importações futuras.</p>
-          <h3>O simulador de RSC tem valor oficial?</h3>
-          <p>Não — é uma ferramenta de apoio de uso individual, baseada nas tabelas do decreto vigente, para você organizar sua pontuação e comprovação. A avaliação formal cabe sempre à comissão da sua instituição.</p>
-          <div class="ok">Ainda com dúvidas? Os dois guias completos acima cobrem cada tela e cada botão do app em detalhe.</div>
+        <section class="card">
+          <h2><i class="fa-solid fa-code-branch text-govbr-600 dark:text-unifesp-400"></i> Código aberto e citação</h2>
+          <p>O repositório completo está disponível em <a href="https://github.com/alexsandroccarv/lattesZen" target="_blank" rel="noopener">github.com/alexsandroccarv/lattesZen</a>, sob a licença <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">AGPLv3</a>. Sugestões, relatos de bugs e contribuições são bem-vindos por lá.</p>
+          <p>O projeto também tem um registro permanente no Zenodo, útil para citação acadêmica: <a href="https://doi.org/10.5281/zenodo.22346453" target="_blank" rel="noopener">DOI 10.5281/zenodo.22346453</a>.</p>
+        </section>
+
+        <section class="card">
+          <h2><i class="fa-solid fa-mug-hot text-govbr-600 dark:text-unifesp-400"></i> Apoie o projeto</h2>
+          <p>O lattesZen é gratuito e não tem fins lucrativos. Se ele te ajudou a organizar o currículo, considere <a href="doe-um-cafe.html">doar um café</a> para ajudar a manter o projeto no ar.</p>
         </section>
       </div>
     </main>

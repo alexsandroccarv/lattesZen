@@ -605,17 +605,13 @@
     <!-- ============================ RODAPÉ (igual ao app) ============================ -->
     <footer class="bg-govbr-800 dark:bg-gray-950 border-t border-govbr-700 dark:border-gray-700 py-3 px-6 text-xs text-blue-100 dark:text-gray-400 flex flex-col sm:flex-row justify-between items-center shrink-0 gap-4 transition-colors duration-300">
         <div class="flex items-center gap-4 flex-wrap justify-center">
-            <span><span class="font-mono" id="appVersion"></span> | <span id="lastModDate"></span></span>
+            <a href="termodeuso.html" class="hover:text-white transition-colors flex items-center gap-1" title="Termo de uso" aria-label="Termo de uso"><i aria-hidden="true" class="fa-solid fa-file-contract"></i></a>
             <span class="text-white/25 dark:text-gray-700">|</span>
-            <a href="termodeuso.html" class="hover:text-white transition-colors">Termo de uso</a>
+            <a href="privacidade.html" class="hover:text-white transition-colors flex items-center gap-1" title="Política de privacidade" aria-label="Política de privacidade"><i aria-hidden="true" class="fa-solid fa-shield-halved"></i></a>
             <span class="text-white/25 dark:text-gray-700">|</span>
-            <a href="privacidade.html" class="hover:text-white transition-colors">Política de privacidade</a>
+            <a href="./ajuda.html" class="hover:text-white transition-colors flex items-center gap-1" title="Ajuda" aria-label="Ajuda"><i aria-hidden="true" class="fa-solid fa-circle-question"></i></a>
             <span class="text-white/25 dark:text-gray-700">|</span>
-            <a href="./ajuda.html" class="hover:text-white transition-colors flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-circle-question"></i> Ajuda</a>
-            <span class="text-white/25 dark:text-gray-700">|</span>
-            <button type="button" id="themeToggle" class="hover:text-white transition-colors flex items-center gap-1" aria-pressed="false" title="Alternar tema">
-                <i aria-hidden="true" class="fa-solid fa-moon"></i> <span id="themeToggleLabel" class="sr-only">Tema escuro</span>
-            </button>
+            <a href="sobre.html" class="hover:text-white transition-colors flex items-center gap-1" title="Sobre" aria-label="Sobre"><i aria-hidden="true" class="fa-solid fa-circle-info"></i></a>
             <span class="text-white/25 dark:text-gray-700">|</span>
             <button type="button" id="highContrastToggle" class="hover:text-white transition-colors flex items-center gap-1" aria-pressed="false" title="Alternar alto contraste">
                 <i aria-hidden="true" class="fa-solid fa-circle-half-stroke"></i> <span class="sr-only">Alto contraste</span>
@@ -625,11 +621,6 @@
                 <button type="button" id="fontDec" class="hover:text-white transition-colors flex items-center gap-1" title="Diminuir fonte" aria-label="Diminuir fonte"><i aria-hidden="true" class="fa-solid fa-magnifying-glass-minus"></i> A-</button>
                 <button type="button" id="fontInc" class="hover:text-white transition-colors flex items-center gap-1" title="Aumentar fonte" aria-label="Aumentar fonte"><i aria-hidden="true" class="fa-solid fa-magnifying-glass-plus"></i> A+</button>
             </span>
-        </div>
-        <div class="flex items-center justify-center">
-            <a href="https://doi.org/10.5281/zenodo.22346453" target="_blank" rel="noopener" title="DOI: 10.5281/zenodo.22346453">
-                <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22346453.svg" alt="DOI 10.5281/zenodo.22346453" class="h-5">
-            </a>
         </div>
         <div class="flex gap-3 items-center flex-wrap justify-center">
             <a href="https://github.com/alexsandroccarv" target="_blank" rel="noopener" class="hover:text-white hover:underline transition-colors flex items-center gap-1">
@@ -643,10 +634,12 @@
             <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener" class="hover:text-white transition-colors flex items-center gap-1" title="Licença AGPLv3 (Free Software Foundation)">
                 <i aria-hidden="true" class="fa-solid fa-scale-balanced text-white/90 dark:text-unifesp-400"></i> AGPLv3
             </a>
+            <span class="text-white/40 dark:text-gray-600">|</span>
+            <span class="flex items-center gap-1"><i aria-hidden="true" class="fa-solid fa-tag" title="Versão"></i> <a href="notas-de-versao.html" class="font-mono hover:text-white hover:underline transition-colors" title="Notas de versão"><span id="appVersion"></span></a></span>
         </div>
     </footer>
 
-    <!-- Cabeçalho/rodapé dinâmicos: versão, nome do titular e alternadores de tema (mesmo comportamento do app) -->
+    <!-- Cabeçalho/rodapé dinâmicos: versão e nome do titular (mesmo comportamento do app) -->
     <script src="js/config.js"></script>
     <script src="js/analytics.js"></script>
     <script src="js/cookie-consent.js"></script>
@@ -656,7 +649,6 @@
             var C = window.APP_CONFIG || {};
             var setTxt = function (id, v) { var el = document.getElementById(id); if (el && v != null) el.textContent = v; };
             setTxt('appVersion', C.version);
-            setTxt('lastModDate', C.lastModified);
             // Nome completo do item de Identificação (mesma lógica do app): "lattesZen | Nome".
             var nome = '';
             try {
@@ -670,14 +662,6 @@
             document.title = nome ? (C.name || 'lattesZen') + ' | ' + nome : (C.name || 'lattesZen');
 
             var htmlEl = document.documentElement;
-            var tt = document.getElementById('themeToggle');
-            function syncTheme() {
-                var d = htmlEl.classList.contains('dark');
-                tt.setAttribute('aria-pressed', d ? 'true' : 'false');
-                tt.querySelector('i').className = d ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-                document.getElementById('themeToggleLabel').textContent = d ? 'Tema claro' : 'Tema escuro';
-            }
-            if (tt) { syncTheme(); tt.addEventListener('click', function () { htmlEl.classList.toggle('dark'); localStorage.setItem('tema', htmlEl.classList.contains('dark') ? 'dark' : 'light'); syncTheme(); }); }
 
             var hc = document.getElementById('highContrastToggle');
             function syncHC() { hc.setAttribute('aria-pressed', htmlEl.classList.contains('high-contrast') ? 'true' : 'false'); }
