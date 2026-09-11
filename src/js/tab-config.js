@@ -44,17 +44,16 @@ window.TabConfig = (function () {
     /* =====================================================================
        IMPORTAR LATTES (XML) — seção dentro de Configurações
        ===================================================================== */
-    // Aviso de consistência exibido nas operações de XML (importar/exportar):
-    // depois de adotar o lattesZen, as edições devem ocorrer AQUI e não mais
-    // diretamente na Plataforma Lattes (senão a assinatura do item muda e pode
-    // duplicar na próxima importação).
-    function xmlConsistencyNoticeHtml() {
-        return `
-            <div class="text-sm rounded-md border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 px-3 py-2 mb-3 flex gap-2">
-                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
-                <span>Para manter a <strong>consistência</strong>: depois de adotar o lattesZen, faça as <strong>edições aqui no lattesZen</strong> e não mais diretamente na Plataforma Lattes. O lattesZen vira a sua fonte de referência e você exporta o XML para atualizar o Lattes. Alterar um item direto na Plataforma Lattes muda o identificador dele e pode gerar <strong>duplicação</strong> ao reimportar.</span>
-            </div>`;
-    }
+    // Feature flag: a seção "Importar" (upload do XML do Lattes) fica fora de
+    // exibição por ora — a lógica de importação continua toda aqui (parser,
+    // deduplicação, listagem de itens etc.), só não é apresentada na UI até
+    // retomarmos essa frente. Trocar para true reativa a seção sem precisar
+    // reescrever nada.
+    const IMPORT_XML_VISIVEL = false;
+    // Aviso de consistência tocado nas operações de exportação: depois de
+    // adotar o lattesZen, as edições devem ocorrer AQUI e não mais diretamente
+    // na Plataforma Lattes (senão a assinatura do item muda e pode duplicar na
+    // próxima importação).
     function xmlConsistencyToast() {
         toast('Lembrete: edite no lattesZen (não direto na Plataforma Lattes) para manter a consistência dos dados.', 'aviso');
     }
@@ -70,16 +69,17 @@ window.TabConfig = (function () {
                 <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
                     <i aria-hidden="true" class="fa-solid fa-file-import text-govbr-600 dark:text-unifesp-400"></i> Currículo Lattes (XML)
                 </h2>
-                ${xmlConsistencyNoticeHtml()}
 
-                <h3 class="text-sm font-semibold mb-1">Importar</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Exporte seu currículo em XML na Plataforma Lattes (Menu <em>&rarr; Exportar &rarr; XML</em>) e selecione o arquivo abaixo.
-                    Os itens serão listados para você escolher quais importar; cada um poderá receber um PDF depois.
-                </p>
-                <input type="file" id="xmlInput" accept=".xml,application/xml,text/xml"
-                       class="text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
-                <div id="xmlResult" class="mt-3"></div>
+                <div id="importXmlBloco"${IMPORT_XML_VISIVEL ? '' : ' hidden'}>
+                    <h3 class="text-sm font-semibold mb-1">Importar</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Exporte seu currículo em XML na Plataforma Lattes (Menu <em>&rarr; Exportar &rarr; XML</em>) e selecione o arquivo abaixo.
+                        Os itens serão listados para você escolher quais importar; cada um poderá receber um PDF depois.
+                    </p>
+                    <input type="file" id="xmlInput" accept=".xml,application/xml,text/xml"
+                           class="text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
+                    <div id="xmlResult" class="mt-3"></div>
+                </div>
 
                 <h3 class="text-sm font-semibold mt-5 mb-1">Exportar</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Gera um arquivo <strong>curriculo-&lt;nome&gt;-&lt;data e hora&gt;.xml</strong> no formato oficial do CNPq (schema <em>CurriculoLattes</em>, codificação ISO-8859-1). O nome traz a data/hora da geração, então exportações anteriores não são sobrescritas. Inclui apenas os itens das categorias do Lattes — <strong>RSC, Conexões e Registros pessoais não são exportados</strong>. As evidências (PDFs) não fazem parte do XML.</p>

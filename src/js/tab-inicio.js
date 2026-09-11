@@ -64,6 +64,17 @@ window.TabInicio = (function () {
                 </section>
 
                 <section class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <h2 class="text-lg font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-quote-left text-govbr-600 dark:text-unifesp-400"></i> Como citar</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Se o lattesZen te ajudou numa pesquisa ou trabalho acadêmico, considere citá-lo:</p>
+                    <blockquote class="text-sm border-l-4 border-govbr-300 dark:border-unifesp-700 pl-3 py-1.5 bg-white dark:bg-gray-900 rounded-r">
+                        CARVALHO, Alexsandro Cardoso. <em>LattesZen: descomplicando o currículo Acadêmico</em>. Versão 0.7.02. Santos: Github, 2016. DOI: <a href="https://zenodo.org/records/22346453" target="_blank" rel="noopener" class="underline">https://zenodo.org/records/22346453</a>.
+                    </blockquote>
+                    <button type="button" id="btnCopiarCitacao" class="mt-2 px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-xs hover:border-govbr-500 dark:hover:border-unifesp-400">
+                        <i aria-hidden="true" class="fa-solid fa-copy mr-1"></i> Copiar citação
+                    </button>
+                </section>
+
+                <section class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                     <h2 class="text-lg font-bold mb-3 flex items-center gap-2"><i class="fa-solid fa-hands-holding-circle text-govbr-600 dark:text-unifesp-400"></i> Como colaborar</h2>
                     <div class="grid sm:grid-cols-2 gap-3 text-sm">
                         <a href="https://github.com/alexsandroccarv/lattesZen/issues" target="_blank" rel="noopener" class="flex gap-2 hover:text-govbr-700 dark:hover:text-unifesp-400">
@@ -101,6 +112,16 @@ window.TabInicio = (function () {
         $('#btnInicioDir').addEventListener('click', () => irParaConfigSecao('dirSection'));
         $('#btnInicioCatalogar').addEventListener('click', () => window.AppCore.switchTab('catalogar'));
         $('#btnInicioImportar').addEventListener('click', () => irParaConfigSecao('importXmlSection'));
+
+        const btnCitacao = $('#btnCopiarCitacao');
+        if (btnCitacao) btnCitacao.addEventListener('click', () => {
+            const texto = 'CARVALHO, Alexsandro Cardoso. LattesZen: descomplicando o currículo Acadêmico. Versão 0.7.02. Santos: Github, 2016. DOI: https://zenodo.org/records/22346453.';
+            navigator.clipboard.writeText(texto).then(() => {
+                const original = btnCitacao.innerHTML;
+                btnCitacao.innerHTML = '<i aria-hidden="true" class="fa-solid fa-check mr-1"></i> Copiado!';
+                setTimeout(() => { btnCitacao.innerHTML = original; }, 1800);
+            });
+        });
     }
 
     return { render };

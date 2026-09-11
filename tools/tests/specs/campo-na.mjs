@@ -63,6 +63,24 @@ test('N/A em URL não vira "https://Não se aplica" ao salvar', async ({ page, b
     assertEqual(salvo, 'Não se aplica', 'Valor salvo de URL com N/A marcado (não deve virar "https://Não se aplica")');
 });
 
+test('N/A em Instituição promotora (Editoração) não trava o salvamento', async ({ page, baseUrl }) => {
+    await page.goto(baseUrl + '/index.html');
+    await page.waitForTimeout(400);
+    await selectTipo(page, 'Produções', 'Editoração');
+    await page.fill('[name="titulo"]', 'Anais NA Teste');
+    await page.fill('[name="ano"]', '2020');
+    await page.check('[data-na="instituicao"]');
+    await page.waitForTimeout(150);
+    const campo = await page.$eval('[name="instituicao"]', (el) => ({ value: el.value, disabled: el.disabled }));
+    assertEqual(campo, { value: '', disabled: true }, 'Campo logo após marcar N/A');
+
+    await page.fill('[name="editora"]', 'Editora Independente');
+    await page.click('button[type="submit"]');
+    await page.waitForTimeout(350);
+    const salvo = await savedFieldFor(page, 'Anais NA Teste', 'instituicao');
+    assertEqual(salvo, 'Não se aplica', 'Valor salvo de Instituição promotora com N/A marcado');
+});
+
 test('Esquemas de URL além de http(s) são preservados (ftp, magnet)', async ({ page, baseUrl }) => {
     await page.goto(baseUrl + '/index.html');
     await page.waitForTimeout(400);

@@ -839,7 +839,10 @@ const TYPES = {
         { key: 'relevante', label: 'É um dos 10 trabalhos mais relevantes de sua produção?', type: 'checkbox' },
         PROD_AUTORES_LISTA,
         { key: 'paginas', label: 'Nº de páginas', type: 'text' },
-        { key: 'instituicao', label: 'Instituição promotora', type: 'text' },
+        // Editoração: o principal aqui é a Editora, não a instituição — nem
+        // sempre há uma instituição promotora por trás (ex.: editora
+        // comercial independente), por isso o N/A.
+        { key: 'instituicao', label: 'Instituição promotora', type: 'text', na: true },
         { key: 'editora', label: 'Editora', type: 'text' }, F_CIDADE,
         ...PROD_PALAVRAS_AREA_SETORES_OUTRAS,
     ] },

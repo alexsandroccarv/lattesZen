@@ -46,3 +46,20 @@ test('"Importar XML do Lattes" troca para Configurações e rola até a seção 
     const existeSecao = await page.$('#importXmlSection');
     assert(existeSecao, 'A seção de importação de XML deveria existir na tela de Configurações');
 });
+
+test('Seção "Como citar" mostra a referência completa e o botão de copiar funciona', async ({ page, baseUrl }) => {
+    await abrirInicio(page, baseUrl);
+    const citacao = await page.$eval('#tab-inicio blockquote', (el) => el.textContent.replace(/\s+/g, ' ').trim());
+    assert(citacao.includes('CARVALHO, Alexsandro Cardoso'), 'Citação deveria conter o autor');
+    assert(citacao.includes('LattesZen: descomplicando o currículo Acadêmico'), 'Citação deveria conter o título');
+    assert(citacao.includes('Versão 0.7.02'), 'Citação deveria conter a versão citada');
+    assert(citacao.includes('Santos: Github, 2016'), 'Citação deveria conter local/editora/ano');
+    const hrefDoi = await page.$eval('#tab-inicio blockquote a', (el) => el.getAttribute('href'));
+    assertEqual(hrefDoi, 'https://zenodo.org/records/22346453', 'Link do DOI deveria apontar para o Zenodo');
+
+    await page.context().grantPermissions(['clipboard-write', 'clipboard-read'], { origin: baseUrl });
+    await page.click('#btnCopiarCitacao');
+    await page.waitForTimeout(100);
+    const textoBotao = await page.$eval('#btnCopiarCitacao', (el) => el.textContent.trim());
+    assert(textoBotao.includes('Copiado'), 'Botão deveria mostrar confirmação de cópia');
+});
