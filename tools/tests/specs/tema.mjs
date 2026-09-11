@@ -80,6 +80,35 @@ test('Voltar para "Padrão" remove a classe/atributo de tema', async ({ page, ba
     assertEqual(salvo, 'padrao', 'O valor salvo deveria refletir "padrao"');
 });
 
+test('Todos os temas definem de fato as variáveis --lz-* (regressão: comentário CSS mal fechado zerava tudo)', async ({ page, baseUrl }) => {
+    // Bug real (relatado pelo usuário): um comentário CSS contendo o texto
+    // "govbr-*/unifesp-*" tem, sem querer, a sequência "*/" no meio — fecha
+    // o comentário mais cedo do que deveria, e todo o texto até o próximo
+    // "*/" (sem abertura correspondente) vira "CSS" inválido. Isso zerava
+    // as variáveis --lz-* de TODOS os temas: fundo/texto ficavam
+    // transparentes/herdados (cabeçalho "some", títulos ilegíveis), mesmo
+    // com data-lz-theme e .lz-theme corretamente aplicados pelo JS — só
+    // pegável checando se as variáveis realmente resolvem, não só a classe.
+    await abrirConfig(page, baseUrl);
+    const valores = await page.$$eval('#themeSelect option', (opts) => opts.map((o) => o.value).filter((v) => v !== 'padrao'));
+    for (const tema of valores) {
+        await page.selectOption('#themeSelect', tema);
+        await page.waitForTimeout(80);
+        const vars = await page.evaluate(() => {
+            const cs = getComputedStyle(document.documentElement);
+            return {
+                bg: cs.getPropertyValue('--lz-bg').trim(),
+                header: cs.getPropertyValue('--lz-header').trim(),
+                text: cs.getPropertyValue('--lz-text').trim(),
+                accent: cs.getPropertyValue('--lz-accent').trim(),
+            };
+        });
+        for (const [k, v] of Object.entries(vars)) {
+            assert(v.length > 0, `Tema "${tema}": --lz-${k} deveria ter um valor definido, veio vazio`);
+        }
+    }
+});
+
 test('Sem tema escolhido, a grade da Linha do tempo continua com a escala própria (.viz-heat-*)', async ({ page, baseUrl }) => {
     await page.goto(baseUrl + '/index.html');
     await page.waitForTimeout(400);

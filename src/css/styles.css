@@ -64,7 +64,7 @@ html.high-contrast button {
 /* ---- Escala de intensidade da grade da Linha do tempo (heatmap 0-4,
    estilo GitHub) — cor É o dado (mesmo motivo do bloco acima), por isso
    em CSS puro e FORA do alcance do seletor de tema abaixo: um tema nunca
-   deve achatar as 4 intensidades numa cor só. Substitui bg-govbr-*/
+   deve achatar as 4 intensidades numa cor só. Substitui bg-govbr-* /
    dark:bg-unifesp-* (tons 300/500/950 nem existiam no Tailwind config —
    bug preexistente que ficava com 2 dos 4 níveis invisíveis). */
 .viz-heat-1 { background-color: #ADCDFF; }
@@ -108,9 +108,9 @@ main { padding: 16px; }
    classe .lz-theme e o atributo data-lz-theme="<id>". As paletas definem
    as variáveis --lz-*; as regras genéricas (html.lz-theme ...) aplicam
    essas variáveis ao cabeçalho, régua de abas, rodapé, campos e — como o
-   lattesZen usa a cor "marca" (govbr-*/dark:unifesp-*) em muito mais
+   lattesZen usa a cor "marca" (govbr-* / dark:unifesp-*) em muito mais
    lugares que o templateZen (botões e ícones em todas as abas, não só o
-   cabeçalho) — também nas classes utilitárias govbr-*/unifesp-* usadas
+   cabeçalho) — também nas classes utilitárias govbr-* / unifesp-* usadas
    pelo resto do app, pra o tema valer no app inteiro, não só no "chrome".
    Sem tema escolhido (padrão), nada disto se aplica — visual atual
    preservado integralmente.
@@ -192,7 +192,7 @@ html.lz-theme a:focus-visible,
 html.lz-theme button:focus-visible,
 html.lz-theme [role="tab"]:focus-visible { outline: 2px solid var(--lz-accent); }
 
-/* ---- App inteiro: classes utilitárias govbr-*/unifesp-* usadas pelas
+/* ---- App inteiro: classes utilitárias govbr-* / unifesp-* usadas pelas
    abas (botões, ícones, badges) — não só o "chrome" acima. Não inclui os
    tons usados só pela grade da Linha do tempo (.viz-heat-*, isolada) nem
    bg-govbr-800 (só o rodapé, já coberto pelo seletor genérico "footer").
