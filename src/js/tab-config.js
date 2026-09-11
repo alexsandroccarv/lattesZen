@@ -44,12 +44,6 @@ window.TabConfig = (function () {
     /* =====================================================================
        IMPORTAR LATTES (XML) — seção dentro de Configurações
        ===================================================================== */
-    // Feature flag: a seção "Importar" (upload do XML do Lattes) fica fora de
-    // exibição por ora — a lógica de importação continua toda aqui (parser,
-    // deduplicação, listagem de itens etc.), só não é apresentada na UI até
-    // retomarmos essa frente. Trocar para true reativa a seção sem precisar
-    // reescrever nada.
-    const IMPORT_XML_VISIVEL = false;
     // Aviso de consistência tocado nas operações de exportação: depois de
     // adotar o lattesZen, as edições devem ocorrer AQUI e não mais diretamente
     // na Plataforma Lattes (senão a assinatura do item muda e pode duplicar na
@@ -70,16 +64,10 @@ window.TabConfig = (function () {
                     <i aria-hidden="true" class="fa-solid fa-file-import text-govbr-600 dark:text-unifesp-400"></i> Currículo Lattes (XML)
                 </h2>
 
-                <div id="importXmlBloco"${IMPORT_XML_VISIVEL ? '' : ' hidden'}>
-                    <h3 class="text-sm font-semibold mb-1">Importar</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        Exporte seu currículo em XML na Plataforma Lattes (Menu <em>&rarr; Exportar &rarr; XML</em>) e selecione o arquivo abaixo.
-                        Os itens serão listados para você escolher quais importar; cada um poderá receber um PDF depois.
-                    </p>
-                    <input type="file" id="xmlInput" accept=".xml,application/xml,text/xml"
-                           class="text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
-                    <div id="xmlResult" class="mt-3"></div>
-                </div>
+                <h3 class="text-sm font-semibold mb-1">Importar</h3>
+                <input type="file" id="xmlInput" accept=".xml,application/xml,text/xml"
+                       class="text-sm file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
+                <div id="xmlResult" class="mt-3"></div>
 
                 <h3 class="text-sm font-semibold mt-5 mb-1">Exportar</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Gera um arquivo <strong>curriculo-&lt;nome&gt;-&lt;data e hora&gt;.xml</strong> no formato oficial do CNPq (schema <em>CurriculoLattes</em>, codificação ISO-8859-1). O nome traz a data/hora da geração, então exportações anteriores não são sobrescritas. Inclui apenas os itens das categorias do Lattes — <strong>RSC, Conexões e Registros pessoais não são exportados</strong>. As evidências (PDFs) não fazem parte do XML.</p>

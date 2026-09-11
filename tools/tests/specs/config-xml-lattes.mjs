@@ -4,10 +4,10 @@
    - O aviso de consistência ("Para manter a consistência...") não é mais
      exibido nesta seção (o texto ficava redundante/alarmante para quem só
      quer importar uma vez).
-   - A sub-seção "Importar" (h3 + parágrafo + input de arquivo) fica oculta
-     por ora (feature ainda não retomada), mas continua no DOM — nada foi
-     excluído, só escondido via atributo `hidden` — para religar bastando
-     trocar IMPORT_XML_VISIVEL para true em tab-config.js.
+   - Em "Importar", só o texto explicativo (o parágrafo "Exporte seu
+     currículo em XML na Plataforma Lattes...") foi removido — a função de
+     importar em si (input de arquivo, listagem de itens etc.) continua
+     visível e funcionando normalmente.
    ========================================================================== */
 import { test, assert, assertEqual } from '../harness.mjs';
 
@@ -25,16 +25,17 @@ test('Aviso de consistência não aparece mais na seção Currículo Lattes (XML
     assert(!secaoTexto.includes('muda o identificador dele e pode gerar'), 'O texto completo do aviso não deveria mais aparecer');
 });
 
-test('Sub-seção "Importar" fica oculta mas continua no DOM (não foi excluída)', async ({ page, baseUrl }) => {
+test('"Importar" perde só o texto explicativo — input de arquivo continua visível e funcional', async ({ page, baseUrl }) => {
     await abrirConfig(page, baseUrl);
-    const bloco = await page.$('#importXmlBloco');
-    assert(bloco, 'O bloco de importação deveria continuar existindo no DOM');
-    const oculto = await page.$eval('#importXmlBloco', (el) => el.hidden);
-    assert(oculto, 'O bloco de importação deveria estar oculto (hidden)');
+    const secaoTexto = await page.$eval('#importXmlSection', (el) => el.textContent);
+    assert(!secaoTexto.includes('Exporte seu currículo em XML na Plataforma Lattes'), 'O parágrafo explicativo de Importar não deveria mais aparecer');
+    assert(!secaoTexto.includes('Os itens serão listados para você escolher quais importar'), 'O parágrafo explicativo de Importar não deveria mais aparecer');
 
-    const inputExiste = await page.$('#xmlInput');
-    assert(inputExiste, 'O input de arquivo XML deveria continuar existindo (lógica preservada)');
+    const input = await page.$('#xmlInput');
+    assert(input, 'O input de arquivo XML deveria continuar existindo');
+    const visivel = await page.$eval('#xmlInput', (el) => el.offsetParent !== null);
+    assert(visivel, 'O input de arquivo XML deveria continuar visível');
 
-    const secao = await page.$eval('#importXmlSection', (el) => el.textContent);
-    assert(secao.includes('Exportar'), 'A sub-seção "Exportar" deveria continuar visível normalmente');
+    assert(secaoTexto.includes('Importar'), 'O título "Importar" deveria continuar visível');
+    assert(secaoTexto.includes('Exportar'), 'A sub-seção "Exportar" deveria continuar visível normalmente');
 });
