@@ -106,8 +106,16 @@
                     </span>
                 </div>
             </div>
-            <div id="govBrLogo" class="bg-white rounded px-2 py-1.5 flex items-center shrink-0 dark:hidden">
-                <img src="images/geral/gov_br.svg" alt="Governo Federal" class="h-5 w-auto" onerror="this.parentElement.style.display='none'">
+            <div class="flex items-center gap-3 shrink-0">
+                <div id="govBrLogo" class="bg-white rounded px-2 py-1.5 flex items-center shrink-0 dark:hidden">
+                    <img src="images/geral/gov_br.svg" alt="Governo Federal" class="h-5 w-auto" onerror="this.parentElement.style.display='none'">
+                </div>
+                <!-- Configurações: mesma posição do templateZen (1ª linha do
+                     cabeçalho, extrema direita) — abre index.html na aba
+                     Configurações (ver hash "#config" tratado em app.js). -->
+                <a href="index.html#config" title="Configurações" aria-label="Configurações" class="text-white/90 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded shrink-0">
+                    <i aria-hidden="true" class="fa-solid fa-gear"></i>
+                </a>
             </div>
         </div>
 
@@ -125,9 +133,6 @@
                 </a>
                 <a href="index.html" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-govbr-600 dark:hover:text-unifesp-400 whitespace-nowrap">
                     <i aria-hidden="true" class="fa-solid fa-globe mr-1"></i> Publicar na Web
-                </a>
-                <a href="index.html" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-600 dark:text-gray-300 hover:text-govbr-600 dark:hover:text-unifesp-400 whitespace-nowrap">
-                    <i aria-hidden="true" class="fa-solid fa-gear mr-1"></i> Configurações
                 </a>
                 <span class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-govbr-600 dark:border-unifesp-400 text-govbr-700 dark:text-unifesp-400 font-bold whitespace-nowrap" aria-current="page">
                     <i aria-hidden="true" class="fa-solid fa-user-shield mr-1"></i> Privacidade

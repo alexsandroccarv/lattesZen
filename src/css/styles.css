@@ -24,6 +24,13 @@ html.high-contrast button {
     color: #4ade80;
     border-bottom-color: #4ade80;
 }
+/* O botão de Configurações mora na barra azul do topo (não na régua branca
+   de abas) — a cor de "aba ativa" acima (azul/verde) ficaria ilegível ali;
+   mantém a cor branca do próprio botão mesmo selecionado. */
+#headerConfigBtn[aria-selected="true"] {
+    color: rgba(255, 255, 255, .9);
+    border-bottom-color: transparent;
+}
 .tab-panel[hidden] { display: none; }
 
 /* ---- Badges de status ---- */

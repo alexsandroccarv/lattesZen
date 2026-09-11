@@ -684,7 +684,10 @@
 
         // Abas
         $$('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-        switchTab('inicio');
+        // Vindo de outra página pelo botão de Configurações no cabeçalho
+        // (ex.: index.html#config a partir de privacidade.html) — abre a
+        // aba direto, em vez de sempre cair em "Início".
+        switchTab(window.location.hash === '#config' ? 'config' : 'inicio');
 
         wireFirstRunNotice();
     }
