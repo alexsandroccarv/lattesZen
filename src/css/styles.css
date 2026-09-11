@@ -195,21 +195,30 @@ html.lz-theme [role="tab"]:focus-visible { outline: 2px solid var(--lz-accent); 
 /* ---- App inteiro: classes utilitárias govbr-*/unifesp-* usadas pelas
    abas (botões, ícones, badges) — não só o "chrome" acima. Não inclui os
    tons usados só pela grade da Linha do tempo (.viz-heat-*, isolada) nem
-   bg-govbr-800 (só o rodapé, já coberto pelo seletor genérico "footer"). */
+   bg-govbr-800 (só o rodapé, já coberto pelo seletor genérico "footer").
+   As classes que também aparecem no cabeçalho/rodapé (bg-govbr-600,
+   border-govbr-700, text-govbr-600, dark:text-unifesp-400,
+   dark:from/to-unifesp-*) levam :not(header, header *, footer, footer *):
+   sem isso, por especificidade (2 classes aqui > 1 classe+tag nas regras
+   de cabeçalho/rodapé acima), estas regras "roubavam" a cor de fundo/
+   borda/texto do próprio cabeçalho/rodapé, que ficava com a cor de
+   destaque (accent) errada em vez de --lz-header/--lz-footer — chegando a
+   parecer que o cabeçalho "sumia" quando a cor de destaque do tema era
+   próxima da cor de fundo da página. */
 html.lz-theme .bg-govbr-50,
 html.lz-theme .hover\:bg-govbr-100:hover { background-color: var(--lz-surface) !important; }
-html.lz-theme .bg-govbr-600,
-html.lz-theme.dark .dark\:bg-unifesp-600,
+html.lz-theme .bg-govbr-600:not(header, header *),
+html.lz-theme.dark .dark\:bg-unifesp-600:not(header, header *),
 html.lz-theme.dark .dark\:bg-unifesp-700 { background-color: var(--lz-accent) !important; }
-html.lz-theme .text-govbr-600,
+html.lz-theme .text-govbr-600:not(header, header *, footer, footer *),
 html.lz-theme .text-govbr-700,
 html.lz-theme.dark .dark\:text-unifesp-300,
-html.lz-theme.dark .dark\:text-unifesp-400,
+html.lz-theme.dark .dark\:text-unifesp-400:not(header, header *, footer, footer *),
 html.lz-theme .hover\:text-govbr-600:hover,
 html.lz-theme .hover\:text-govbr-700:hover,
 html.lz-theme.dark .dark\:hover\:text-unifesp-400:hover { color: var(--lz-accent) !important; }
 html.lz-theme .border-govbr-600,
-html.lz-theme .border-govbr-700,
+html.lz-theme .border-govbr-700:not(header, header *, footer, footer *),
 html.lz-theme.dark .dark\:border-unifesp-600,
 html.lz-theme.dark .dark\:border-unifesp-700,
 html.lz-theme.dark .dark\:border-unifesp-400,
@@ -223,7 +232,36 @@ html.lz-theme .ring-govbr-400 { --tw-ring-color: var(--lz-accent) !important; }
 html.lz-theme .file\:bg-govbr-600::file-selector-button,
 html.lz-theme.dark .dark\:file\:bg-unifesp-700::file-selector-button { background-color: var(--lz-accent) !important; }
 html.lz-theme .from-govbr-600,
-html.lz-theme.dark .dark\:from-unifesp-600,
+html.lz-theme.dark .dark\:from-unifesp-600:not(header, header *),
 html.lz-theme.dark .dark\:from-unifesp-700 { --tw-gradient-from: var(--lz-accent) !important; }
 html.lz-theme .to-govbr-800,
-html.lz-theme.dark .dark\:to-unifesp-900 { --tw-gradient-to: var(--lz-accent-2) !important; }
+html.lz-theme.dark .dark\:to-unifesp-900:not(header, header *) { --tw-gradient-to: var(--lz-accent-2) !important; }
+
+/* ---- App inteiro: fundos/bordas/textos NEUTROS (cinza) usados pelos
+   cartões de cada seção — sem isto, ao ligar um tema o texto (herdado do
+   <body>, forçado a --lz-text) ficava sobre o fundo cinza claro/escuro
+   ORIGINAL do card (bg-gray-50/dark:bg-gray-800, inalterado), gerando
+   texto claro sobre fundo claro (ou escuro sobre escuro) — títulos como
+   "Diretório de armazenamento" ficavam ilegíveis em temas escuros.
+   dark:bg-gray-800/900 e dark:text-gray-300/400 também são usados pelo
+   cabeçalho/régua de abas/rodapé (mesmo problema de especificidade do
+   bloco anterior) — por isso as mesmas exclusões :not(...) aqui. */
+html.lz-theme .bg-gray-50,
+html.lz-theme .bg-gray-100,
+html.lz-theme.dark .dark\:bg-gray-700,
+html.lz-theme.dark .dark\:bg-gray-800:not(nav, nav *),
+html.lz-theme.dark .dark\:bg-gray-900:not(body, header, header *) { background-color: var(--lz-surface) !important; }
+html.lz-theme .border-gray-200,
+html.lz-theme .border-gray-300,
+html.lz-theme.dark .dark\:border-gray-600,
+html.lz-theme.dark .dark\:border-gray-700 { border-color: var(--lz-border) !important; }
+html.lz-theme .text-gray-700,
+html.lz-theme .text-gray-800,
+html.lz-theme.dark .dark\:text-gray-100,
+html.lz-theme.dark .dark\:text-gray-200 { color: var(--lz-text) !important; }
+html.lz-theme .text-gray-400,
+html.lz-theme .text-gray-500,
+html.lz-theme .text-gray-600:not(nav, nav *),
+html.lz-theme.dark .dark\:text-gray-300:not(nav, nav *),
+html.lz-theme.dark .dark\:text-gray-400:not(footer, footer *),
+html.lz-theme.dark .dark\:text-gray-500 { color: var(--lz-muted) !important; }
