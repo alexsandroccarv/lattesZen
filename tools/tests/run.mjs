@@ -59,6 +59,7 @@ import './specs/producao-por-tipo.mjs';
 import './specs/header-config.mjs';
 import './specs/catalogar-botoes-evidencia.mjs';
 import './specs/config-xml-lattes.mjs';
+import './specs/tema.mjs';
 
 console.log('Rodando suíte de testes de regressão (Playwright)...\n');
 await runAll();

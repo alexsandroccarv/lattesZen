@@ -180,10 +180,10 @@ window.TabLinhaTempo = (function () {
     // então dá pra comparar visualmente duas categorias diferentes.
     const NIVEL_CLASSES = [
         'bg-gray-100 dark:bg-gray-800',
-        'bg-govbr-100 dark:bg-unifesp-950',
-        'bg-govbr-300 dark:bg-unifesp-800',
-        'bg-govbr-500 dark:bg-unifesp-700',
-        'bg-govbr-700 dark:bg-unifesp-400',
+        'viz-heat-1',
+        'viz-heat-2',
+        'viz-heat-3',
+        'viz-heat-4',
     ];
     function nivel(n, max) {
         if (!n) return 0;

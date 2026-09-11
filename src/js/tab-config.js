@@ -103,6 +103,78 @@ window.TabConfig = (function () {
             </section>`;
     }
 
+    /* =====================================================================
+       TEMA — paletas prontas trazidas do templateZen ("conforme está lá"),
+       seção dentro de Configurações. Aplica a classe .lz-theme + o atributo
+       data-lz-theme no <html>; as cores em si vivem em styles.css (paletas
+       por data-lz-theme, valendo pro app inteiro — não só cabeçalho/rodapé).
+       ===================================================================== */
+    const THEME_DEFAULT = 'padrao'; // lattesZen mantém o visual gov.br por padrão
+    const THEME_PRESETS = [
+        { value: 'padrao', label: 'Padrão (gov.br)', font: "system-ui,sans-serif" },
+        { value: 'dracula', label: 'Dracula', font: "'Fira Sans',system-ui,sans-serif" },
+        { value: 'solarized-dark', label: 'Solarized Dark', font: "'Source Sans 3',system-ui,sans-serif" },
+        { value: 'solarized-light', label: 'Solarized Light', font: "'Source Sans 3',system-ui,sans-serif" },
+        { value: 'govbr', label: 'gov.br (padrão em tema fixo)', font: "'Rawline',system-ui,sans-serif" },
+        { value: 'nord', label: 'Nord', font: "'Inter',system-ui,sans-serif" },
+        { value: 'gruvbox', label: 'Gruvbox Dark', font: "'IBM Plex Sans',system-ui,sans-serif" },
+        { value: 'tokyo-night', label: 'Tokyo Night', font: "'Manrope',system-ui,sans-serif" },
+        { value: 'one-dark', label: 'One Dark', font: "'Inter',system-ui,sans-serif" },
+        { value: 'monokai', label: 'Monokai', font: "'DM Sans',system-ui,sans-serif" },
+        { value: 'catppuccin-mocha', label: 'Catppuccin Mocha', font: "'Nunito',system-ui,sans-serif" },
+        { value: 'github-dark', label: 'GitHub Dark', font: "system-ui,sans-serif" },
+        { value: 'github-light', label: 'GitHub Light', font: "system-ui,sans-serif" },
+        { value: 'ayu', label: 'Ayu', font: "'Work Sans',system-ui,sans-serif" },
+        { value: 'rose-pine', label: 'Rosé Pine', font: "'Quicksand',system-ui,sans-serif" },
+        { value: 'everforest', label: 'Everforest', font: "'Cabin',system-ui,sans-serif" },
+        { value: 'material', label: 'Material', font: "'Roboto',system-ui,sans-serif" },
+    ];
+    function themeSectionHtml() {
+        return `
+            <section id="temaSection" class="scroll-mt-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
+                    <i aria-hidden="true" class="fa-solid fa-palette text-govbr-600 dark:text-unifesp-400"></i> Tema
+                </h2>
+                <div class="space-y-2">
+                    <label for="themeSelect" class="block text-sm">Escolha um tema</label>
+                    <select id="themeSelect" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-govbr-400">
+                        ${THEME_PRESETS.map(p => `<option value="${esc(p.value)}" style="font-family:${p.font}">${esc(p.label)}</option>`).join('')}
+                    </select>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">O tema é aplicado ao app inteiro (cabeçalho, abas, botões, rodapé) e fica salvo neste navegador. "Padrão" mantém o visual gov.br de sempre.</p>
+                </div>
+            </section>`;
+    }
+    // Aplica um tema (chamado ao trocar o select e uma vez no carregamento
+    // desta aba, pra manter o <select> sincronizado com o que já está ativo
+    // — a aplicação em si já ocorreu cedo, no script inline de cada página).
+    function aplicarTema(preset) {
+        const html = document.documentElement;
+        if (preset && preset !== 'padrao') {
+            html.setAttribute('data-lz-theme', preset);
+            html.classList.add('lz-theme');
+            if (typeof window.__loadThemeFont === 'function') window.__loadThemeFont(preset);
+        } else {
+            html.classList.remove('lz-theme');
+            html.removeAttribute('data-lz-theme');
+        }
+        if (typeof window.__setThemeColor === 'function') window.__setThemeColor();
+    }
+    function wireThemeSection() {
+        const sel = $('#themeSelect');
+        if (!sel) return;
+        const saved = localStorage.getItem(APP_CONFIG.storageKeys.themePreset) || THEME_DEFAULT;
+        sel.value = saved;
+        // Prévia de fonte nas opções do <select>: carrega as fontes de todos
+        // os temas (só quando a aba Configurações é aberta, não no boot).
+        if (typeof window.__loadThemeFont === 'function') {
+            THEME_PRESETS.forEach(p => window.__loadThemeFont(p.value));
+        }
+        sel.addEventListener('change', () => {
+            localStorage.setItem(APP_CONFIG.storageKeys.themePreset, sel.value);
+            aplicarTema(sel.value);
+        });
+    }
+
     // Nome do arquivo XML exportado, com timestamp (evita sobrescrever
     // exportações anteriores e registra quando cada uma foi gerada).
     function xmlFileName() {
@@ -1578,6 +1650,7 @@ window.TabConfig = (function () {
                             </details>`).join('')}
                     </div>
                 </details>
+                ${themeSectionHtml()}
 
                 ${cfgGroup(CFG_GROUPS[5])}
                 ${lixeiraSectionHtml()}
@@ -1596,6 +1669,7 @@ window.TabConfig = (function () {
             </div>`;
 
         wireCfgIndex();
+        wireThemeSection();
         wirePerfilSection();
         wireRscConfig();
         wirePubWebConfig();

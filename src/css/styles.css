@@ -61,6 +61,21 @@ html.high-contrast button {
 .dark .viz-cat-7 { fill: #9085e9; background-color: #9085e9; }
 .dark .viz-cat-outros { fill: #9a9a95; background-color: #9a9a95; }
 
+/* ---- Escala de intensidade da grade da Linha do tempo (heatmap 0-4,
+   estilo GitHub) — cor É o dado (mesmo motivo do bloco acima), por isso
+   em CSS puro e FORA do alcance do seletor de tema abaixo: um tema nunca
+   deve achatar as 4 intensidades numa cor só. Substitui bg-govbr-*/
+   dark:bg-unifesp-* (tons 300/500/950 nem existiam no Tailwind config —
+   bug preexistente que ficava com 2 dos 4 níveis invisíveis). */
+.viz-heat-1 { background-color: #ADCDFF; }
+.viz-heat-2 { background-color: #6FA0E8; }
+.viz-heat-3 { background-color: #2E62B0; }
+.viz-heat-4 { background-color: #0C326F; }
+.dark .viz-heat-1 { background-color: #0F3D22; }
+.dark .viz-heat-2 { background-color: #166534; }
+.dark .viz-heat-3 { background-color: #15803d; }
+.dark .viz-heat-4 { background-color: #4ade80; }
+
 /* ---- Rolagem suave em listas longas ---- */
 .scroll-area { scrollbar-width: thin; scrollbar-color: #d1d5db transparent; }
 .scroll-area::-webkit-scrollbar { height: 6px; width: 6px; }
@@ -86,3 +101,148 @@ footer { background: #071D41; color: #dbeafe; }
 footer a, footer button { color: #dbeafe; background: none; border: 0; }
 main { padding: 16px; }
 .tab-btn { padding: 10px 14px; }
+
+/* ==========================================================================
+   Tema: paletas prontas (trazidas do templateZen, "conforme está lá") —
+   escolhidas em Configurações. Ao escolher um tema, o <html> recebe a
+   classe .lz-theme e o atributo data-lz-theme="<id>". As paletas definem
+   as variáveis --lz-*; as regras genéricas (html.lz-theme ...) aplicam
+   essas variáveis ao cabeçalho, régua de abas, rodapé, campos e — como o
+   lattesZen usa a cor "marca" (govbr-*/dark:unifesp-*) em muito mais
+   lugares que o templateZen (botões e ícones em todas as abas, não só o
+   cabeçalho) — também nas classes utilitárias govbr-*/unifesp-* usadas
+   pelo resto do app, pra o tema valer no app inteiro, não só no "chrome".
+   Sem tema escolhido (padrão), nada disto se aplica — visual atual
+   preservado integralmente.
+   ========================================================================== */
+html[data-lz-theme="dracula"]{--lz-bg:#282a36;--lz-surface:#44475a;--lz-text:#f8f8f2;--lz-muted:#aab3dc;--lz-border:#44475a;--lz-header:#21222c;--lz-header-text:#f8f8f2;--lz-nav:#21222c;--lz-nav-text:#f8f8f2;--lz-footer:#191a21;--lz-footer-text:#f8f8f2;--lz-accent:#bd93f9}
+html[data-lz-theme="solarized-dark"]{--lz-bg:#002b36;--lz-surface:#073642;--lz-text:#93a1a1;--lz-muted:#93a1a1;--lz-border:#0d4552;--lz-header:#073642;--lz-header-text:#eee8d5;--lz-nav:#002b36;--lz-nav-text:#93a1a1;--lz-footer:#073642;--lz-footer-text:#93a1a1;--lz-accent:#4aa3dd}
+html[data-lz-theme="solarized-light"]{--lz-bg:#fdf6e3;--lz-surface:#eee8d5;--lz-text:#4a5d63;--lz-muted:#5e7377;--lz-border:#d9d2b8;--lz-header:#1a6aa8;--lz-header-text:#ffffff;--lz-nav:#eee8d5;--lz-nav-text:#4a5d63;--lz-footer:#073642;--lz-footer-text:#eee8d5;--lz-accent:#0f5a94}
+html[data-lz-theme="govbr"]{--lz-bg:#f8f9fa;--lz-surface:#ffffff;--lz-text:#1c1c1c;--lz-muted:#555555;--lz-border:#cccccc;--lz-header:#1351b4;--lz-header-text:#ffffff;--lz-nav:#ffffff;--lz-nav-text:#1351b4;--lz-footer:#071d41;--lz-footer-text:#ffffff;--lz-accent:#1351b4}
+html[data-lz-theme="nord"]{--lz-bg:#2e3440;--lz-surface:#3b4252;--lz-text:#eceff4;--lz-muted:#a3adc2;--lz-border:#434c5e;--lz-header:#3b4252;--lz-header-text:#eceff4;--lz-nav:#2e3440;--lz-nav-text:#d8dee9;--lz-footer:#2e3440;--lz-footer-text:#d8dee9;--lz-accent:#88c0d0}
+html[data-lz-theme="gruvbox"]{--lz-bg:#282828;--lz-surface:#3c3836;--lz-text:#ebdbb2;--lz-muted:#b0a08c;--lz-border:#504945;--lz-header:#1d2021;--lz-header-text:#ebdbb2;--lz-nav:#1d2021;--lz-nav-text:#ebdbb2;--lz-footer:#1d2021;--lz-footer-text:#ebdbb2;--lz-accent:#fabd2f}
+html[data-lz-theme="tokyo-night"]{--lz-bg:#1a1b26;--lz-surface:#24283b;--lz-text:#c0caf5;--lz-muted:#8189bb;--lz-border:#292e42;--lz-header:#16161e;--lz-header-text:#c0caf5;--lz-nav:#16161e;--lz-nav-text:#a9b1d6;--lz-footer:#16161e;--lz-footer-text:#a9b1d6;--lz-accent:#7aa2f7}
+html[data-lz-theme="one-dark"]{--lz-bg:#282c34;--lz-surface:#21252b;--lz-text:#abb2bf;--lz-muted:#868e9c;--lz-border:#3b4048;--lz-header:#21252b;--lz-header-text:#abb2bf;--lz-nav:#21252b;--lz-nav-text:#abb2bf;--lz-footer:#1b1e23;--lz-footer-text:#abb2bf;--lz-accent:#61afef}
+html[data-lz-theme="monokai"]{--lz-bg:#272822;--lz-surface:#3e3d32;--lz-text:#f8f8f2;--lz-muted:#a6a28a;--lz-border:#49483e;--lz-header:#1e1f1c;--lz-header-text:#f8f8f2;--lz-nav:#1e1f1c;--lz-nav-text:#f8f8f2;--lz-footer:#1e1f1c;--lz-footer-text:#f8f8f2;--lz-accent:#a6e22e}
+html[data-lz-theme="catppuccin-mocha"]{--lz-bg:#1e1e2e;--lz-surface:#313244;--lz-text:#cdd6f4;--lz-muted:#a6adc8;--lz-border:#313244;--lz-header:#181825;--lz-header-text:#cdd6f4;--lz-nav:#181825;--lz-nav-text:#cdd6f4;--lz-footer:#11111b;--lz-footer-text:#cdd6f4;--lz-accent:#cba6f7}
+html[data-lz-theme="github-dark"]{--lz-bg:#0d1117;--lz-surface:#161b22;--lz-text:#c9d1d9;--lz-muted:#8b949e;--lz-border:#30363d;--lz-header:#161b22;--lz-header-text:#e6edf3;--lz-nav:#0d1117;--lz-nav-text:#c9d1d9;--lz-footer:#010409;--lz-footer-text:#c9d1d9;--lz-accent:#58a6ff}
+html[data-lz-theme="github-light"]{--lz-bg:#ffffff;--lz-surface:#f6f8fa;--lz-text:#24292f;--lz-muted:#57606a;--lz-border:#d0d7de;--lz-header:#24292f;--lz-header-text:#ffffff;--lz-nav:#f6f8fa;--lz-nav-text:#24292f;--lz-footer:#24292f;--lz-footer-text:#ffffff;--lz-accent:#0969da}
+html[data-lz-theme="ayu"]{--lz-bg:#0b0e14;--lz-surface:#131721;--lz-text:#bfbdb6;--lz-muted:#8b909b;--lz-border:#1c212b;--lz-header:#11151c;--lz-header-text:#bfbdb6;--lz-nav:#11151c;--lz-nav-text:#bfbdb6;--lz-footer:#0b0e14;--lz-footer-text:#bfbdb6;--lz-accent:#ffb454}
+html[data-lz-theme="rose-pine"]{--lz-bg:#191724;--lz-surface:#1f1d2e;--lz-text:#e0def4;--lz-muted:#908caa;--lz-border:#26233a;--lz-header:#1f1d2e;--lz-header-text:#e0def4;--lz-nav:#191724;--lz-nav-text:#e0def4;--lz-footer:#16141f;--lz-footer-text:#e0def4;--lz-accent:#c4a7e7}
+html[data-lz-theme="everforest"]{--lz-bg:#2d353b;--lz-surface:#343f44;--lz-text:#d3c6aa;--lz-muted:#a6b0a0;--lz-border:#3d484d;--lz-header:#232a2e;--lz-header-text:#d3c6aa;--lz-nav:#232a2e;--lz-nav-text:#d3c6aa;--lz-footer:#232a2e;--lz-footer-text:#d3c6aa;--lz-accent:#a7c080}
+html[data-lz-theme="material"]{--lz-bg:#263238;--lz-surface:#2e3c43;--lz-text:#eeffff;--lz-muted:#97a5af;--lz-border:#37474f;--lz-header:#1e272c;--lz-header-text:#eeffff;--lz-nav:#1e272c;--lz-nav-text:#eeffff;--lz-footer:#1e272c;--lz-footer-text:#eeffff;--lz-accent:#82aaff}
+
+/* Segundo destaque por tema (--lz-accent-2): estados positivos/gradiente. */
+html[data-lz-theme="dracula"]{--lz-accent-2:#50fa7b}
+html[data-lz-theme="solarized-dark"]{--lz-accent-2:#859900}
+html[data-lz-theme="solarized-light"]{--lz-accent-2:#6c7a00}
+html[data-lz-theme="govbr"]{--lz-accent-2:#168821}
+html[data-lz-theme="nord"]{--lz-accent-2:#a3be8c}
+html[data-lz-theme="gruvbox"]{--lz-accent-2:#b8bb26}
+html[data-lz-theme="tokyo-night"]{--lz-accent-2:#9ece6a}
+html[data-lz-theme="one-dark"]{--lz-accent-2:#98c379}
+html[data-lz-theme="monokai"]{--lz-accent-2:#66d9ef}
+html[data-lz-theme="catppuccin-mocha"]{--lz-accent-2:#a6e3a1}
+html[data-lz-theme="github-dark"]{--lz-accent-2:#3fb950}
+html[data-lz-theme="github-light"]{--lz-accent-2:#1a7f37}
+html[data-lz-theme="ayu"]{--lz-accent-2:#7fd94c}
+html[data-lz-theme="rose-pine"]{--lz-accent-2:#9ccfd8}
+html[data-lz-theme="everforest"]{--lz-accent-2:#83c092}
+html[data-lz-theme="material"]{--lz-accent-2:#c3e88d}
+
+/* Fonte por tema (Google Fonts, carregadas sob demanda por js/theme.js). */
+html[data-lz-theme="dracula"]{--lz-font:'Fira Sans',system-ui,sans-serif}
+html[data-lz-theme="solarized-dark"]{--lz-font:'Source Sans 3',system-ui,sans-serif}
+html[data-lz-theme="solarized-light"]{--lz-font:'Source Sans 3',system-ui,sans-serif}
+html[data-lz-theme="govbr"]{--lz-font:'Rawline',system-ui,sans-serif}
+html[data-lz-theme="nord"]{--lz-font:'Inter',system-ui,sans-serif}
+html[data-lz-theme="gruvbox"]{--lz-font:'IBM Plex Sans',system-ui,sans-serif}
+html[data-lz-theme="tokyo-night"]{--lz-font:'Manrope',system-ui,sans-serif}
+html[data-lz-theme="one-dark"]{--lz-font:'Inter',system-ui,sans-serif}
+html[data-lz-theme="monokai"]{--lz-font:'DM Sans',system-ui,sans-serif}
+html[data-lz-theme="catppuccin-mocha"]{--lz-font:'Nunito',system-ui,sans-serif}
+html[data-lz-theme="ayu"]{--lz-font:'Work Sans',system-ui,sans-serif}
+html[data-lz-theme="rose-pine"]{--lz-font:'Quicksand',system-ui,sans-serif}
+html[data-lz-theme="everforest"]{--lz-font:'Cabin',system-ui,sans-serif}
+html[data-lz-theme="material"]{--lz-font:'Roboto',system-ui,sans-serif}
+
+/* ---- Estrutura (cabeçalho/régua de abas/rodapé/campos/rolagem) ---- */
+html.lz-theme body { background-color: var(--lz-bg) !important; color: var(--lz-text) !important; }
+html.lz-theme body { font-family: var(--lz-font, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif) !important; }
+html.lz-theme header,
+html.lz-theme header > div:first-child { background-color: var(--lz-header) !important; border-color: var(--lz-border) !important; }
+html.lz-theme header h1,
+html.lz-theme header #headerNome,
+html.lz-theme header #headerConfigBtn,
+html.lz-theme header a[aria-label="Configurações"] { color: var(--lz-header-text) !important; }
+html.lz-theme header [class*="text-white/30"] { color: var(--lz-header-text) !important; opacity: .35; }
+html.lz-theme nav { background-color: var(--lz-nav) !important; border-color: var(--lz-border) !important; }
+html.lz-theme .tab-btn { color: var(--lz-nav-text) !important; }
+html.lz-theme .tab-btn[aria-selected="true"] { color: var(--lz-accent) !important; border-bottom-color: var(--lz-accent) !important; }
+html.lz-theme #headerConfigBtn[aria-selected="true"] { color: var(--lz-header-text) !important; }
+html.lz-theme #govBrLogo { background-color: #ffffff !important; }
+html.lz-theme footer { background-color: var(--lz-footer) !important; color: var(--lz-footer-text) !important; }
+html.lz-theme footer a,
+html.lz-theme footer button { color: var(--lz-footer-text) !important; }
+html.lz-theme footer [class*="text-white/25"] { color: var(--lz-footer-text) !important; opacity: .35; }
+html.lz-theme footer a:hover,
+html.lz-theme footer button:hover { color: var(--lz-footer-text) !important; text-decoration: underline; }
+
+html.lz-theme input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+html.lz-theme select,
+html.lz-theme textarea {
+    background-color: var(--lz-surface) !important;
+    color: var(--lz-text) !important;
+    border-color: var(--lz-border) !important;
+}
+html.lz-theme input,
+html.lz-theme select,
+html.lz-theme textarea { accent-color: var(--lz-accent); }
+html.lz-theme input::placeholder,
+html.lz-theme textarea::placeholder { color: var(--lz-muted) !important; }
+
+html.lz-theme { scrollbar-color: var(--lz-accent) var(--lz-surface); }
+html.lz-theme ::-webkit-scrollbar { width: 12px; height: 12px; }
+html.lz-theme ::-webkit-scrollbar-track { background: var(--lz-surface); }
+html.lz-theme ::-webkit-scrollbar-thumb { background: var(--lz-accent); border-radius: 6px; border: 3px solid var(--lz-surface); }
+html.lz-theme ::selection { background: var(--lz-accent); color: var(--lz-bg); }
+html.lz-theme :focus { --tw-ring-color: var(--lz-accent); }
+html.lz-theme a:focus-visible,
+html.lz-theme button:focus-visible,
+html.lz-theme [role="tab"]:focus-visible { outline: 2px solid var(--lz-accent); }
+
+/* ---- App inteiro: classes utilitárias govbr-*/unifesp-* usadas pelas
+   abas (botões, ícones, badges) — não só o "chrome" acima. Não inclui os
+   tons usados só pela grade da Linha do tempo (.viz-heat-*, isolada) nem
+   bg-govbr-800 (só o rodapé, já coberto pelo seletor genérico "footer"). */
+html.lz-theme .bg-govbr-50,
+html.lz-theme .hover\:bg-govbr-100:hover { background-color: var(--lz-surface) !important; }
+html.lz-theme .bg-govbr-600,
+html.lz-theme.dark .dark\:bg-unifesp-600,
+html.lz-theme.dark .dark\:bg-unifesp-700 { background-color: var(--lz-accent) !important; }
+html.lz-theme .text-govbr-600,
+html.lz-theme .text-govbr-700,
+html.lz-theme.dark .dark\:text-unifesp-300,
+html.lz-theme.dark .dark\:text-unifesp-400,
+html.lz-theme .hover\:text-govbr-600:hover,
+html.lz-theme .hover\:text-govbr-700:hover,
+html.lz-theme.dark .dark\:hover\:text-unifesp-400:hover { color: var(--lz-accent) !important; }
+html.lz-theme .border-govbr-600,
+html.lz-theme .border-govbr-700,
+html.lz-theme.dark .dark\:border-unifesp-600,
+html.lz-theme.dark .dark\:border-unifesp-700,
+html.lz-theme.dark .dark\:border-unifesp-400,
+html.lz-theme .hover\:border-govbr-500:hover,
+html.lz-theme .hover\:border-govbr-600:hover,
+html.lz-theme.dark .dark\:hover\:border-unifesp-400:hover { border-color: var(--lz-accent) !important; }
+html.lz-theme .border-govbr-100,
+html.lz-theme .border-govbr-200,
+html.lz-theme .border-govbr-300 { border-color: var(--lz-border) !important; }
+html.lz-theme .ring-govbr-400 { --tw-ring-color: var(--lz-accent) !important; }
+html.lz-theme .file\:bg-govbr-600::file-selector-button,
+html.lz-theme.dark .dark\:file\:bg-unifesp-700::file-selector-button { background-color: var(--lz-accent) !important; }
+html.lz-theme .from-govbr-600,
+html.lz-theme.dark .dark\:from-unifesp-600,
+html.lz-theme.dark .dark\:from-unifesp-700 { --tw-gradient-from: var(--lz-accent) !important; }
+html.lz-theme .to-govbr-800,
+html.lz-theme.dark .dark\:to-unifesp-900 { --tw-gradient-to: var(--lz-accent-2) !important; }

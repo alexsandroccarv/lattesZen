@@ -7,7 +7,7 @@ window.APP_CONFIG = {
     // Os dois primeiros números são atualizados manualmente; o terceiro (2
     // dígitos) é incrementado a cada issue fechada no GitHub — ver política
     // completa em CLAUDE.md e o histórico em notas-de-versao.html.
-    version: 'v0.7.28',
+    version: 'v0.7.29',
     lastModified: '11/09/2026',
     author: {
         nome: 'Alexsandro Cardoso Carvalho',
@@ -29,6 +29,7 @@ window.APP_CONFIG = {
         // parar num arquivo que o usuário pode compartilhar/enviar a outro lugar.
         deployTokens: 'lz_deploy_tokens',
         highContrast: 'altoContraste',
+        themePreset: 'lz_tema_preset',
     },
     // Google Drive (armazenamento remoto opcional, alternativo à pasta local).
     // Client ID OAuth do Google Cloud Console — não é segredo, pode ficar aqui
