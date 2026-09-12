@@ -47,6 +47,7 @@ async function mockPicker(page, { id = 'picked-folder-id', name = 'MinhaPastaExi
             this.setSelectFolderEnabled = function () { return this; };
             this.setEnableDrives = function () { return this; };
             this.setLabel = function () { return this; };
+            this.setMimeTypes = function () { return this; };
         }
         function PickerBuilder() {
             let callback = null;
@@ -67,7 +68,7 @@ async function mockPicker(page, { id = 'picked-folder-id', name = 'MinhaPastaExi
             };
         }
         window.google = window.google || {};
-        window.google.picker = { ViewId: { FOLDERS: 'folders' }, Action: { PICKED: 'picked', CANCEL: 'cancel' }, DocsView, PickerBuilder };
+        window.google.picker = { ViewId: { DOCS: 'docs', FOLDERS: 'folders' }, Action: { PICKED: 'picked', CANCEL: 'cancel' }, DocsView, PickerBuilder };
     }, { id, name, cancelar });
 }
 
