@@ -32,10 +32,12 @@
 
         const texto = document.createElement('p');
         texto.style.cssText = 'margin:0;max-width:640px;flex:1 1 320px';
-        texto.innerHTML = 'Usamos o Google Analytics para entender o acesso a este site (não inclui o conteúdo '
-            + 'do seu currículo, que fica só no seu navegador). '
-            + '<a href="privacidade.html" style="color:#ADCDFF;text-decoration:underline" target="_blank" rel="noopener">'
-            + 'Saiba mais na Política de Privacidade</a>.';
+        // Sem link pra "Política de Privacidade" aqui: a página dela também
+        // fica bloqueada pelo mesmo overlay (o consentimento ainda não foi
+        // decidido), então um link pra lá, dentro do próprio bloqueio, não
+        // levaria a lugar nenhum.
+        texto.textContent = 'Usamos o Google Analytics para entender o acesso a este site (não inclui o conteúdo '
+            + 'do seu currículo, que fica só no seu navegador).';
 
         const btnAceitar = document.createElement('button');
         btnAceitar.type = 'button';
