@@ -659,9 +659,14 @@ window.TabCatalogar = (function () {
             </div>
 
             <div id="camposPanel" class="hidden lg:col-span-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+                <div id="idiomasCadastradosBlock" class="hidden"></div>
                 <div id="dynFields" class="space-y-3"></div>
                 <div id="visibilidadeBlock" class="space-y-3"></div>
                 <div id="rscBlock" class="space-y-3"></div>
+
+                <p class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5">
+                    <i aria-hidden="true" class="fa-solid fa-circle-info mr-1"></i> Para cadastrar a evidência de <strong>cursos</strong>, use o tipo <strong>02 Formação → Formação complementar</strong>; para <strong>certificados de proficiência</strong>, use <strong>16 Certificações</strong>.
+                </p>
 
                 <div class="space-y-1">
                     <label class="block text-xs font-semibold" for="notasGerais">Anotações gerais</label>
@@ -765,8 +770,24 @@ window.TabCatalogar = (function () {
             if (camposPanel) camposPanel.classList.toggle('hidden', !$('#selTipo').value);
             const def = LattesTypes.get($('#selTipo').value);
             const vals = item ? (item.fields || {}) : {};
-            $('#dynFields').innerHTML = dynFieldsHtml(def ? def.fields : [], vals);
+            // Idiomas: o seletor de idioma não deve oferecer um idioma já
+            // cadastrado em outro item (evita duplicata pela raiz, sem
+            // depender só do aviso de "item parecido" ao salvar — ver
+            // onSubmitForm). O próprio idioma do item em edição continua
+            // disponível (não é filtrado), senão editar um item existente
+            // sem trocar o idioma ficaria com o campo vazio.
+            let camposParaRenderizar = def ? def.fields : [];
+            if (def && def.key === 'IDIOMAS') {
+                const usados = new Set(state.items
+                    .filter(i => i.typeKey === 'IDIOMAS' && (!item || i.id !== item.id))
+                    .map(i => (i.fields || {}).titulo).filter(Boolean));
+                camposParaRenderizar = def.fields.map(f => f.key === 'titulo'
+                    ? Object.assign({}, f, { options: (f.options || []).filter(o => !usados.has(o)) })
+                    : f);
+            }
+            $('#dynFields').innerHTML = dynFieldsHtml(camposParaRenderizar, vals);
             associateLabels($('#dynFields'));           // a11y: label for/id + aria-required
+            renderIdiomasCadastradosBlock(def, item);
             if (def && def.fields.some(f => f.type === 'areatree')) wireAreaTree($('#dynFields'), vals);
             wireValidators($('#dynFields'));             // ISSN/ISBN/DOI/URL
             wireCounters($('#dynFields'));               // contador de textareas
@@ -795,6 +816,36 @@ window.TabCatalogar = (function () {
                     ? 'Recurso ainda não configurado neste site (falta a Chave de API do Picker em config.js)'
                     : 'Selecionar um arquivo já existente no Google Drive';
             }
+        }
+
+        // Entre a seção de seleção do tipo e o formulário de cadastro do
+        // idioma: lista os idiomas já cadastrados (ordem alfabética), cada
+        // um com um link "Editar" que reabre o formulário naquele item —
+        // ajuda a notar rapidamente um idioma repetido antes de tentar
+        // recadastrá-lo (ver também o filtro do próprio seletor, acima).
+        function renderIdiomasCadastradosBlock(def, itemAtual) {
+            const bloco = $('#idiomasCadastradosBlock');
+            if (!bloco) return;
+            const ehIdiomas = !!(def && def.key === 'IDIOMAS');
+            if (!ehIdiomas) { bloco.classList.add('hidden'); bloco.innerHTML = ''; return; }
+            const cadastrados = state.items
+                .filter(i => i.typeKey === 'IDIOMAS' && (!itemAtual || i.id !== itemAtual.id) && (i.fields || {}).titulo)
+                .slice().sort((a, b) => a.fields.titulo.localeCompare(b.fields.titulo, 'pt-BR'));
+            if (!cadastrados.length) { bloco.classList.add('hidden'); bloco.innerHTML = ''; return; }
+            bloco.classList.remove('hidden');
+            bloco.innerHTML = `<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3">
+                <p class="text-xs font-semibold mb-1.5"><i aria-hidden="true" class="fa-solid fa-language mr-1"></i> Idiomas já cadastrados</p>
+                <ul class="text-sm space-y-1">${cadastrados.map(i => `<li class="flex items-center justify-between gap-2">
+                    <span>${esc(i.fields.titulo)}</span>
+                    <button type="button" data-editar-idioma="${esc(i.id)}" class="text-xs underline text-govbr-700 dark:text-unifesp-300">Editar</button>
+                </li>`).join('')}</ul>
+            </div>`;
+            $$('[data-editar-idioma]', bloco).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const alvo = state.items.find(i => i.id === btn.dataset.editarIdioma);
+                    if (alvo) buildForm(alvo, { focus: true });
+                });
+            });
         }
 
         // Tipo do item: caixa de seleção nativa
@@ -1638,6 +1689,19 @@ window.TabCatalogar = (function () {
         if (LattesTypes.isSingleton(typeKey)) {
             const ex = state.items.find(i => i.typeKey === typeKey && (!editing || i.id !== editing.id));
             if (ex) editing = ex;
+        }
+        // Idiomas: bloqueia de vez (sem opção de "mesmo assim") um idioma já
+        // cadastrado em OUTRO item — diferente do aviso de duplicata
+        // genérico abaixo, não existe caso legítimo de 2 registros do mesmo
+        // idioma. Roda também ao editar (troca do idioma pra um já usado
+        // por outro item), não só ao criar. O seletor já filtra os idiomas
+        // já usados (ver renderDynFields), então isto é o backstop.
+        if (typeKey === 'IDIOMAS' && fields.titulo) {
+            const outroComMesmoIdioma = state.items.find(i => i.typeKey === 'IDIOMAS' && (!editing || i.id !== editing.id) && (i.fields || {}).titulo === fields.titulo);
+            if (outroComMesmoIdioma) {
+                toast(`"${fields.titulo}" já está cadastrado. Edite o item existente em vez de cadastrar outro.`, 'erro');
+                return;
+            }
         }
         // Detecção de duplicata (só ao criar item novo, não-singleton)
         if (!editing && !LattesTypes.isSingleton(typeKey)) {

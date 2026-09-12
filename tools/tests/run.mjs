@@ -64,6 +64,7 @@ import './specs/config-reorganizacao.mjs';
 import './specs/sumula-config-campos.mjs';
 import './specs/sumula.mjs';
 import './specs/sumula-docx.mjs';
+import './specs/idiomas-duplicata.mjs';
 
 console.log('Rodando suíte de testes de regressão (Playwright)...\n');
 await runAll();
