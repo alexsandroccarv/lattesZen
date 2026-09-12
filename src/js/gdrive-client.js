@@ -265,10 +265,19 @@ window.GDriveClient = (function () {
                 // clicar/entrar nelas (navegação por diretórios, com breadcrumb),
                 // igual à interface completa do Drive — mas setSelectFolderEnabled
                 // continua false: só um ARQUIVO pode ser o resultado final,
-                // pastas servem só pra navegar até ele. Sem setParent(...): deixa
-                // a navegação lateral nativa do Picker aparecer (Compartilhados
-                // comigo/Recentes/Com estrela) — fixar um parent suprimia essas
-                // abas.
+                // pastas servem só pra navegar até ele.
+                //
+                // setParent('root'): sem isto, a listagem inicial do DocsView não
+                // é a raiz do Drive — é uma lista "itens recentes" que mistura
+                // pastas de QUALQUER profundidade da árvore, sem relação direta
+                // com a raiz (sintoma relatado: "um monte de pastas soltas sem
+                // vínculo com as pastas da raiz"). Fixando a raiz como parent
+                // inicial, a listagem passa a mostrar só as pastas/arquivos que
+                // realmente estão soltos na raiz — e clicar numa pasta continua
+                // navegando pra dentro dela normalmente (breadcrumb some do
+                // parent fixo assim que o usuário navega). Tradeoff aceito: as
+                // abas nativas "Recentes"/"Com estrela" do Picker (que dependiam
+                // da listagem começar sem parent) deixam de aparecer.
                 //
                 // DUAS views separadas (não uma só com setEnableDrives): colocar
                 // setEnableDrives(true) na MESMA view que lista "Meu Drive" faz o
@@ -278,7 +287,8 @@ window.GDriveClient = (function () {
                 // Drives compartilhados.
                 const viewMeuDrive = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
-                    .setSelectFolderEnabled(false);
+                    .setSelectFolderEnabled(false)
+                    .setParent('root');
                 const viewDrivesCompartilhados = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
                     .setSelectFolderEnabled(false)
@@ -316,16 +326,11 @@ window.GDriveClient = (function () {
     // {id, name} da pasta escolhida, ou null se cancelado.
     //
     // Mesma configuração de view do pickFile() acima (ViewId.DOCS +
-    // setIncludeFolders(true), SEM setMimeTypes) — não só ViewId.DOCS: uma
-    // tentativa anterior manteve ViewId.DOCS mas acrescentou
-    // setMimeTypes(FOLDER_MIME) pra filtrar a listagem só pra pastas, e isso
-    // quebrou a navegação hierárquica em "Meu Drive" (ficava sem
-    // entrar/sair de subpastas). Como pickFile() nunca usou setMimeTypes e é
-    // a única view deste arquivo com navegação hierárquica confirmada,
-    // pickFolder() passou a copiá-la exatamente, só ligando
-    // setSelectFolderEnabled(true) — a listagem volta a incluir arquivos,
-    // mas o usuário só pode escolher uma pasta mesmo assim (arquivos não são
-    // selecionáveis com essa flag).
+    // setIncludeFolders(true) + setParent('root'), SEM setMimeTypes) — ver o
+    // comentário de lá pra por quê de cada uma. Só ligando
+    // setSelectFolderEnabled(true) a mais — a listagem volta a incluir
+    // arquivos, mas o usuário só pode escolher uma pasta mesmo assim
+    // (arquivos não são selecionáveis com essa flag).
     async function pickFolder(developerKey) {
         if (!developerKey) throw new Error('Chave de API do Google (Picker) não configurada neste site.');
         await ensureFreshToken();
@@ -334,7 +339,8 @@ window.GDriveClient = (function () {
             try {
                 const viewMeuDrive = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
-                    .setSelectFolderEnabled(true);
+                    .setSelectFolderEnabled(true)
+                    .setParent('root');
                 const viewDrivesCompartilhados = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
                     .setSelectFolderEnabled(true)

@@ -48,6 +48,7 @@ async function mockPicker(page, { id = 'picked-folder-id', name = 'MinhaPastaExi
             this.setEnableDrives = function () { return this; };
             this.setLabel = function () { return this; };
             this.setMimeTypes = function () { return this; };
+            this.setParent = function () { return this; };
         }
         function PickerBuilder() {
             let callback = null;
