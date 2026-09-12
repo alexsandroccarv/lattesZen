@@ -110,19 +110,6 @@ test('Página ajuda.html (Início Rápido) linka para os dois guias específicos
     assert(/Início Rápido/.test(h1), `Título principal deveria mencionar "Início Rápido" — obtido "${h1}"`);
 });
 
-test('Configurações tem um link para as notas de versão', async ({ page, baseUrl }) => {
-    await page.goto(baseUrl + '/index.html');
-    await page.waitForTimeout(300);
-    await page.click('[data-tab="config"]');
-    await page.waitForTimeout(300);
-
-    const href = await page.evaluate(() => {
-        const a = document.querySelector('#tab-config a[href="notas-de-versao.html"]');
-        return a ? a.getAttribute('href') : null;
-    });
-    assert(href === 'notas-de-versao.html', 'A aba Configurações deveria ter um link para notas-de-versao.html');
-});
-
 test('Alto contraste e escala de fonte continuam funcionando no rodapé (index.html)', async ({ page, baseUrl }) => {
     // Sem decisão de cookies salva, o aviso (#lzCookieBanner) cobre o rodapé
     // e intercepta o clique — irrelevante pro que este teste cobre, então

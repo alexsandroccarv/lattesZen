@@ -1319,9 +1319,6 @@ window.TabConfig = (function () {
         { id: 'grp-perfil', icon: 'fa-id-card', label: 'Meu perfil' },
         { id: 'grp-fontes', icon: 'fa-arrow-right-arrow-left', label: 'Trazer e levar dados' },
         { id: 'grp-opcionais', icon: 'fa-puzzle-piece', label: 'Recursos opcionais' },
-        { id: 'grp-avancado', icon: 'fa-sliders', label: 'Avançado' },
-        { id: 'grp-lixeira', icon: 'fa-trash-can', label: 'Lixeira' },
-        { id: 'grp-sobre', icon: 'fa-circle-info', label: 'Sobre e suporte' },
         { id: 'grp-risco', icon: 'fa-triangle-exclamation', label: 'Zona de risco' },
     ];
     // Cabeçalho de grupo das Configurações (divisor de seções) — recebe uma
@@ -1424,7 +1421,7 @@ window.TabConfig = (function () {
     }
     function lixeiraSectionHtml() {
         return `
-            <section class="lg:col-span-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <section class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                 <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
                     <i class="fa-solid fa-trash-can text-govbr-600 dark:text-unifesp-400"></i> Lixeira <span class="text-sm font-normal text-gray-500">(${state.trash.length})</span>
                 </h2>
@@ -1616,7 +1613,6 @@ window.TabConfig = (function () {
                 ${pubWebSectionHtml()}
                 ${nuvemPalavrasSectionHtml()}
 
-                ${cfgGroup(CFG_GROUPS[4])}
                 <details class="lg:col-span-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                     <summary class="text-lg font-bold mb-2 flex items-center gap-2 cursor-pointer select-none">
                         <i aria-hidden="true" class="fa-solid fa-angle-right text-sm text-gray-400"></i>
@@ -1664,16 +1660,8 @@ window.TabConfig = (function () {
                 </details>
                 ${themeSectionHtml()}
 
-                ${cfgGroup(CFG_GROUPS[5])}
+                ${cfgGroup(CFG_GROUPS[4])}
                 ${lixeiraSectionHtml()}
-
-                ${cfgGroup(CFG_GROUPS[6])}
-                <section class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                    <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-circle-info text-govbr-600 dark:text-unifesp-400"></i> Sobre o lattesZen</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Versão <span class="font-mono">${esc(APP_CONFIG.version)}</span> — veja o que mudou em cada versão nas <a href="notas-de-versao.html" target="_blank" rel="noopener" class="text-govbr-600 dark:text-unifesp-400 underline">notas de versão</a>. Precisa de ajuda? Confira a <a href="ajuda.html" target="_blank" rel="noopener" class="text-govbr-600 dark:text-unifesp-400 underline">página de Ajuda</a>.</p>
-                </section>
-
-                ${cfgGroup(CFG_GROUPS[7])}
                 <section class="bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 p-4">
                     <button id="btnClear" class="px-3 py-2 rounded bg-red-600 text-white text-sm"><i class="fa-solid fa-trash mr-1"></i> Limpar catálogo (índice local)</button>
                 </section>
