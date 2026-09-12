@@ -884,7 +884,7 @@ window.TabConfig = (function () {
             </h2>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Informações autodeclaradas do Currículo Lattes (Identificação, Foto, Endereço, Texto inicial, Outras informações, Áreas de atuação, Identidade, Passaporte e Documentos pessoais). São itens <strong>do Lattes</strong> — a maioria não exige evidência, exceto Identidade, Passaporte e Documentos pessoais.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
-                ${LattesTypes.perfilTypes().filter(k => k !== 'AREA_ATUACAO' && k !== 'DOCUMENTO_PESSOAL' && k !== 'DOC_IDENTIDADE' && k !== 'DOC_PASSAPORTE').map(perfilCardHtml).join('')}
+                ${['IDENTIFICACAO', 'ENDERECO', 'RESUMO_CV', 'OUTRAS_INFO', 'FOTO_PERFIL'].map(perfilCardHtml).join('')}
                 ${areaAtuacaoSectionHtml()}
                 ${fixedDocCardHtml('DOC_IDENTIDADE')}
                 ${fixedDocCardHtml('DOC_PASSAPORTE')}
