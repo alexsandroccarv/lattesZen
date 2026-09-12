@@ -28,15 +28,31 @@ test('Sem diretório configurado, a seção "Diretório de armazenamento" mostra
     assertEqual(await page.locator('#btnChooseDir').count(), 0, 'Sem escolher um caminho no assistente ainda, "Escolher pasta" não deveria aparecer');
     assertEqual(await page.locator('#btnGDriveConnect').count(), 0, 'Sem escolher um caminho no assistente ainda, "Conectar ao Google Drive" não deveria aparecer');
 
-    // Prefixo do identificador é o 1º passo do assistente, antes da pergunta
-    // "Primeira configuração ou já tenho um diretório".
-    assertEqual(await page.locator('#idPrefix').count(), 1, 'O campo de prefixo deveria fazer parte do assistente');
+    // O prefixo só faz sentido numa "Primeira configuração" (arquivos ainda
+    // não existem, então definir o prefixo agora vale pra todos eles) — antes
+    // de escolher esse caminho, não deveria aparecer ainda.
+    assertEqual(await page.locator('#idPrefix').count(), 0, 'Antes de escolher um caminho, o campo de prefixo ainda não deveria aparecer');
+});
+
+test('Assistente: "Primeira configuração" mostra o passo do prefixo antes de "Onde ficam os arquivos?"; "Já tenho um diretório" pula direto pra essa pergunta, sem prefixo', async ({ page, baseUrl }) => {
+    await abrirConfig(page, baseUrl);
+    await page.click('[data-wizard-modo="novo"]');
+    await page.waitForTimeout(100);
+
+    assertEqual(await page.locator('#idPrefix').count(), 1, 'Numa primeira configuração, o campo de prefixo deveria aparecer');
     const ordem = await page.evaluate(() => {
         const sec = document.querySelector('#dirSection');
         const html = sec.innerHTML;
-        return html.indexOf('Prefixo do identificador') < html.indexOf('Primeira configuração');
+        return html.indexOf('Prefixo do identificador') < html.indexOf('Onde ficam os arquivos');
     });
-    assert(ordem, 'O "Prefixo do identificador dos arquivos" deveria aparecer antes da pergunta "Primeira configuração ou já tenho um diretório"');
+    assert(ordem, 'O "Prefixo do identificador dos arquivos" deveria aparecer antes de "Onde ficam os arquivos?"');
+
+    // Volta e escolhe "Já tenho um diretório" em vez disso — o prefixo não
+    // deveria aparecer para este caminho.
+    await page.click('[data-wizard-modo="existente"]');
+    await page.waitForTimeout(100);
+    assertEqual(await page.locator('#idPrefix').count(), 0, 'Em "Já tenho um diretório", o prefixo não deveria aparecer — os arquivos existentes já têm o deles');
+    assert((await page.$eval('#dirSection', (el) => el.textContent)).includes('Onde ficam os arquivos?'), 'Deveria ir direto pra "Onde ficam os arquivos?"');
 });
 
 test('Assistente: "Primeira configuração" > "Pasta no computador" mostra só "Escolher pasta" (sem "Sincronizar")', async ({ page, baseUrl }) => {
@@ -50,7 +66,7 @@ test('Assistente: "Primeira configuração" > "Pasta no computador" mostra só "
     assertEqual(await page.locator('#btnSync').count(), 0, 'Numa primeira configuração, não deveria oferecer "Sincronizar" (não há nada pra sincronizar ainda)');
 });
 
-test('Assistente: "Já tenho um diretório" > "Pasta no computador" mostra "Escolher pasta" e "Sincronizar" juntos', async ({ page, baseUrl }) => {
+test('Assistente: "Já tenho um diretório" > "Pasta no computador" mostra "Escolher pasta" e "Sincronizar" juntos, sem pedir nome', async ({ page, baseUrl }) => {
     await abrirConfig(page, baseUrl);
     await page.click('[data-wizard-modo="existente"]');
     await page.waitForTimeout(100);
@@ -59,6 +75,8 @@ test('Assistente: "Já tenho um diretório" > "Pasta no computador" mostra "Esco
 
     assertEqual(await page.locator('#btnChooseDir').count(), 1, '"Escolher pasta" deveria aparecer');
     assertEqual(await page.locator('#btnSync').count(), 1, 'Já tendo um diretório existente, "Sincronizar do diretório" deveria aparecer junto');
+    const texto = await page.$eval('#dirSection', (el) => el.textContent);
+    assert(/nome dela é usado automaticamente/i.test(texto), 'Deveria deixar claro que o nome vem da pasta escolhida, sem precisar digitar nada');
 });
 
 test('Assistente: "Primeira configuração" > "Google Drive" mostra "Conectar", sem "Migrar meus arquivos e conectar"', async ({ page, baseUrl }) => {
@@ -68,19 +86,23 @@ test('Assistente: "Primeira configuração" > "Google Drive" mostra "Conectar", 
     await page.click('[data-wizard-tipo="remoto"]');
     await page.waitForTimeout(100);
 
-    assertEqual(await page.locator('#gdrivePasta').count(), 1, 'O campo de nome da pasta do Drive deveria aparecer');
+    assertEqual(await page.locator('#gdrivePasta').count(), 1, 'O campo de nome da pasta do Drive deveria aparecer (é uma pasta nova, precisa de um nome)');
     assertEqual(await page.locator('#btnGDriveConnect').count(), 1, '"Conectar ao Google Drive" deveria aparecer');
+    assert((await page.$eval('#btnGDriveConnect', (el) => el.textContent)).includes('Conectar ao Google Drive'), 'Numa primeira configuração, o botão deveria falar em conectar, não em selecionar pasta existente');
     assertEqual(await page.locator('#btnGDriveMigrate').count(), 0, 'Numa primeira configuração, não deveria oferecer "Migrar meus arquivos e conectar" (não há pasta local pra migrar)');
 });
 
-test('Assistente: "Já tenho um diretório" > "Google Drive" mostra "Conectar" e "Migrar meus arquivos e conectar" juntos', async ({ page, baseUrl }) => {
+test('Assistente: "Já tenho um diretório" > "Google Drive" mostra "Selecionar pasta existente e conectar" e "Migrar" juntos, sem pedir nome', async ({ page, baseUrl }) => {
     await abrirConfig(page, baseUrl);
     await page.click('[data-wizard-modo="existente"]');
     await page.waitForTimeout(100);
     await page.click('[data-wizard-tipo="remoto"]');
     await page.waitForTimeout(100);
 
-    assertEqual(await page.locator('#btnGDriveConnect').count(), 1, '"Conectar ao Google Drive" deveria aparecer');
+    assertEqual(await page.locator('#gdrivePasta').count(), 0, 'Já tendo um diretório, não deveria pedir pra digitar o nome da pasta — o seletor do Drive fornece o nome');
+    const btnConectar = page.locator('#btnGDriveConnect');
+    assertEqual(await btnConectar.count(), 1, '"Selecionar pasta existente e conectar" deveria aparecer');
+    assert((await btnConectar.textContent()).includes('Selecionar pasta existente e conectar'), 'O texto do botão deveria deixar claro que abre um seletor (não digita/cria pasta nova)');
     const btnMigrar = page.locator('#btnGDriveMigrate');
     assertEqual(await btnMigrar.count(), 1, 'Já tendo um diretório existente, "Migrar meus arquivos e conectar" deveria aparecer junto');
     assert((await btnMigrar.textContent()).includes('Migrar meus arquivos e conectar'), 'O texto do botão, no assistente, deveria ser "Migrar meus arquivos e conectar" (não o texto usado no painel de estado já configurado)');
@@ -113,7 +135,7 @@ test('Com um diretório já configurado, a seção mostra o painel de estado dir
     assertEqual(await page.locator('#idPrefix').count(), 0, 'Com diretório já configurado, o passo de "Prefixo do identificador" não precisa mais aparecer');
 });
 
-test('"Esquecer pasta" volta a mostrar o assistente do início (passo 1: prefixo; passo 2: primeira configuração/já tenho)', async ({ page, baseUrl }) => {
+test('"Esquecer pasta" volta a mostrar o assistente do início (passo 1: primeira configuração/já tenho; sem prefixo ainda, até escolher "Primeira configuração")', async ({ page, baseUrl }) => {
     await page.addInitScript(() => {
         Object.defineProperty(window, 'Storage', {
             configurable: true,
@@ -137,8 +159,8 @@ test('"Esquecer pasta" volta a mostrar o assistente do início (passo 1: prefixo
     const toasts = await page.evaluate(() => Array.from(document.querySelectorAll('#toasts > div')).map((d) => d.textContent));
     assert(toasts.some((t) => /pasta esquecida/i.test(t) && /escolha um novo diret[oó]rio|drive/i.test(t)), 'O aviso deveria confirmar que a pasta foi esquecida e indicar o que fazer a seguir');
 
-    assertEqual(await page.locator('[data-wizard-modo]').count(), 2, 'Depois de esquecer a pasta, o assistente deveria reaparecer do zero (passo 2)');
-    assertEqual(await page.locator('#idPrefix').count(), 1, 'O passo 1 (prefixo) do assistente também deveria voltar a aparecer');
+    assertEqual(await page.locator('[data-wizard-modo]').count(), 2, 'Depois de esquecer a pasta, o assistente deveria reaparecer do zero (passo 1)');
+    assertEqual(await page.locator('#idPrefix').count(), 0, 'O prefixo não deveria aparecer ainda — só depois de escolher "Primeira configuração"');
 });
 
 // Regressão (issue #14 — suporte a celular): sem File System Access API

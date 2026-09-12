@@ -305,11 +305,55 @@ window.GDriveClient = (function () {
         });
     }
 
+    // Abre o seletor do Google Drive (Picker) em modo PASTA — o usuário
+    // navega o próprio Drive (inclusive fora da raiz, e Drives compartilhados)
+    // e escolhe uma pasta já existente, ou cria uma nova pelo próprio botão
+    // "Nova pasta" do seletor. Usado para "já tenho um diretório" no Drive:
+    // evita pedir o nome digitado (que só encontra pastas na RAIZ do Drive,
+    // por nome exato — buscar por nome errado criava uma pasta nova vazia em
+    // vez de reconectar à existente). setSelectFolderEnabled(true) permite
+    // escolher a pasta aberta no momento, não só navegar por ela. Retorna
+    // {id, name} da pasta escolhida, ou null se cancelado.
+    async function pickFolder(developerKey) {
+        if (!developerKey) throw new Error('Chave de API do Google (Picker) não configurada neste site.');
+        await ensureFreshToken();
+        await loadPickerLib();
+        return new Promise((resolve, reject) => {
+            try {
+                const viewMeuDrive = new window.google.picker.DocsView(window.google.picker.ViewId.FOLDERS)
+                    .setIncludeFolders(true)
+                    .setSelectFolderEnabled(true);
+                const viewDrivesCompartilhados = new window.google.picker.DocsView(window.google.picker.ViewId.FOLDERS)
+                    .setIncludeFolders(true)
+                    .setSelectFolderEnabled(true)
+                    .setEnableDrives(true)
+                    .setLabel('Drives compartilhados');
+                const picker = new window.google.picker.PickerBuilder()
+                    .addView(viewMeuDrive)
+                    .addView(viewDrivesCompartilhados)
+                    .setOAuthToken(accessToken)
+                    .setDeveloperKey(developerKey)
+                    .setLocale('pt-BR')
+                    .setCallback((data) => {
+                        const Action = window.google.picker.Action;
+                        if (data.action === Action.PICKED) {
+                            const doc = data.docs[0];
+                            resolve({ id: doc.id, name: doc.name });
+                        } else if (data.action === Action.CANCEL) {
+                            resolve(null);
+                        }
+                    })
+                    .build();
+                picker.setVisible(true);
+            } catch (e) { reject(e); }
+        });
+    }
+
     return {
         configure, isConfigured, isConnected, connectInteractive, connectSilent, disconnect, testConnection,
         findFolder, findFile, createFolder, ensureFolder, listChildren,
         createFile, updateFileContent, upsertFile, getFileContent, deleteFile, removeFileIfExists,
         renameFile, moveFile, moveAndRename,
-        getFileParents, pickFile,
+        getFileParents, pickFile, pickFolder,
     };
 })();

@@ -34,6 +34,43 @@ async function mockGis(page) {
     await page.route('https://accounts.google.com/gsi/client', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: FAKE_GIS_JS }));
 }
 
+// Simula o Google Picker (usado por GDriveClient.pickFolder, no assistente
+// "Já tenho um diretório" > Google Drive) já "resolvido" (window.google.picker
+// preenchido ANTES da navegação) — pickFolder() checa isso primeiro e nunca
+// tenta baixar o script real (apis.google.com/js/api.js), então nem precisa
+// interceptar rede pra isto. setVisible() simula o usuário escolhendo (ou
+// cancelando) a pasta de forma assíncrona, como o seletor real faria.
+async function mockPicker(page, { id = 'picked-folder-id', name = 'MinhaPastaExistente', cancelar = false } = {}) {
+    await page.addInitScript(({ id, name, cancelar }) => {
+        function DocsView() {
+            this.setIncludeFolders = function () { return this; };
+            this.setSelectFolderEnabled = function () { return this; };
+            this.setEnableDrives = function () { return this; };
+            this.setLabel = function () { return this; };
+        }
+        function PickerBuilder() {
+            let callback = null;
+            this.addView = function () { return this; };
+            this.setOAuthToken = function () { return this; };
+            this.setDeveloperKey = function () { return this; };
+            this.setLocale = function () { return this; };
+            this.setCallback = function (fn) { callback = fn; return this; };
+            this.build = function () {
+                return {
+                    setVisible() {
+                        setTimeout(() => {
+                            if (cancelar) callback({ action: 'cancel' });
+                            else callback({ action: 'picked', docs: [{ id, name }] });
+                        }, 10);
+                    },
+                };
+            };
+        }
+        window.google = window.google || {};
+        window.google.picker = { ViewId: { FOLDERS: 'folders' }, Action: { PICKED: 'picked', CANCEL: 'cancel' }, DocsView, PickerBuilder };
+    }, { id, name, cancelar });
+}
+
 // Servidor Drive mínimo, em memória: `files` (Map id -> {id,name,parentId,isDir,content,mimeType}).
 function createMockDrive() {
     let nextId = 1;
@@ -223,6 +260,39 @@ test('Conectar ao Google Drive com sucesso cria a pasta raiz e passa a usar o Dr
     assert(dirLbl.includes('Google Drive'), 'O rótulo da pasta atual deveria indicar o Google Drive como back-end em uso');
     const modo = await page.evaluate(() => window.Storage.storageMode());
     assertEqual(modo, 'gdrive', 'storageMode() deveria retornar "gdrive" após conectar com sucesso');
+});
+
+test('Assistente: "Já tenho um diretório" > "Google Drive" > "Selecionar pasta existente e conectar" reconecta à pasta escolhida (sem digitar nome, sem criar pasta nova)', async ({ page, baseUrl }) => {
+    const mock = createMockDrive();
+    await mock.install(page);
+    await mockGis(page);
+    // Pasta que a usuária JÁ usava antes (nome diferente do padrão "lattesZen"
+    // sugerido no campo do modo "Primeira configuração") — o ponto do teste é
+    // que o Picker reconecta a ELA (mesmo id), não cria uma pasta nova.
+    mock.files.set('pasta-antiga-id', { id: 'pasta-antiga-id', name: 'acc-curriculum', parentId: 'root', isDir: true, content: null });
+    await mockPicker(page, { id: 'pasta-antiga-id', name: 'acc-curriculum' });
+    await abrirConfig(page, baseUrl);
+
+    await page.click('[data-wizard-modo="existente"]');
+    await page.waitForTimeout(50);
+    await page.click('[data-wizard-tipo="remoto"]');
+    await page.waitForTimeout(50);
+    assertEqual(await page.locator('#gdrivePasta').count(), 0, 'Em "Já tenho um diretório", não deveria pedir pra digitar o nome da pasta');
+    assertEqual((await page.locator('#btnGDriveConnect').textContent()).trim(), 'Selecionar pasta existente e conectar', 'O botão deveria deixar claro que abre um seletor, não que cria uma pasta nova');
+
+    await page.click('#btnGDriveConnect');
+    await page.waitForFunction(() => {
+        const btn = document.querySelector('#btnGDriveConnect');
+        return !btn || !btn.disabled;
+    }, { timeout: 8000 });
+    await page.waitForTimeout(100);
+
+    const dirLbl = await page.$eval('#dirNameLbl', (el) => el.textContent);
+    assert(dirLbl.includes('acc-curriculum'), 'O nome exibido deveria ser o da pasta escolhida no seletor, sem precisar digitar nada');
+    const pastasComEsseNome = Array.from(mock.files.values()).filter((f) => f.name === 'acc-curriculum' && f.isDir);
+    assertEqual(pastasComEsseNome.length, 1, 'Não deveria ter criado uma pasta nova — deveria reconectar à mesma pasta (mesmo id) escolhida no seletor');
+    const subpastas = Array.from(mock.files.values()).filter((f) => f.parentId === 'pasta-antiga-id' && f.isDir);
+    assert(subpastas.length > 0, 'A estrutura de subpastas (categorias do Lattes) deveria ter sido criada DENTRO da pasta escolhida, não de uma pasta nova');
 });
 
 test('Autorização recusada/cancelada não conecta e mostra mensagem no formulário', async ({ page, baseUrl }) => {
@@ -479,6 +549,7 @@ test('Assistente: "Já tenho um diretório" > "Google Drive" > "Migrar meus arqu
     const mock = createMockDrive();
     await mock.install(page);
     await mockGis(page);
+    await mockPicker(page, { name: 'lattesZen' });
     await mockLocalDir(page, [
         { name: 'it-1.json', kind: 'file', content: '{"id":"it-1"}' },
         { name: 'Produções', kind: 'directory', children: [
@@ -496,9 +567,9 @@ test('Assistente: "Já tenho um diretório" > "Google Drive" > "Migrar meus arqu
     await page.click('[data-wizard-tipo="remoto"]');
     await page.waitForTimeout(50);
     assertEqual(await page.locator('#btnGDriveMigrate').count(), 1, 'O botão "Migrar meus arquivos e conectar" deveria aparecer');
+    assertEqual(await page.locator('#gdrivePasta').count(), 0, 'Em "Já tenho um diretório", não deveria pedir pra digitar o nome da pasta — o seletor do Drive fornece o nome');
 
-    await page.fill('#gdrivePasta', 'lattesZen');
-    await page.click('#btnGDriveMigrate'); // o confirm() é aceito automaticamente pelo harness (page.on('dialog'))
+    await page.click('#btnGDriveMigrate'); // o confirm() é aceito automaticamente pelo harness (page.on('dialog')); a pasta vem do Picker mockado
     await page.waitForFunction(() => !document.querySelector('[data-wizard-modo]'), { timeout: 8000 }); // assistente some quando o diretório fica configurado
     await page.waitForTimeout(100);
 

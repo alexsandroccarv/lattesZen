@@ -167,12 +167,25 @@ window.Storage = (function () {
         const file = new File([blob], picked.name, { type: blob.type || picked.mimeType || 'application/octet-stream' });
         return { file, driveSourceInbox };
     }
+    // cfg.pickExisting: true abre o seletor do Drive (Picker) para o usuário
+    // ESCOLHER uma pasta já existente (nome vem da própria pasta escolhida,
+    // não é digitado) — usado em "já tenho um diretório". Sem isso, cfg.pasta
+    // é o nome de uma pasta a criar/encontrar na raiz do Drive — usado só em
+    // "primeira configuração". Retorna null se o seletor for cancelado.
     async function connectGoogleDrive(cfg) {
-        const pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';
         window.GDriveClient.configure(APP_CONFIG.googleDriveClientId);
         await window.GDriveClient.connectInteractive(); // abre o consentimento do Google
         const email = await window.GDriveClient.testConnection();
-        const rootFolderId = await window.GDriveClient.ensureFolder('root', pasta);
+        let rootFolderId, pasta;
+        if (cfg && cfg.pickExisting) {
+            const picked = await window.GDriveClient.pickFolder(APP_CONFIG.googlePickerApiKey);
+            if (!picked) return null; // usuário cancelou o seletor
+            rootFolderId = picked.id;
+            pasta = picked.name;
+        } else {
+            pasta = String((cfg && cfg.pasta) || '').trim() || 'lattesZen';
+            rootFolderId = await window.GDriveClient.ensureFolder('root', pasta);
+        }
         gdriveCfg = { pasta, rootFolderId, folderCache: {}, email: email || null };
         mode = 'gdrive';
         persistGDriveConfig();
