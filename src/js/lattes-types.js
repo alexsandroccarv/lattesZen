@@ -1263,7 +1263,7 @@ const TYPES = {
         { key: 'url', label: 'Link (URL)', type: 'text', required: true, placeholder: 'https://...' },
         { key: 'usuario', label: 'Usuário / @', type: 'text' }] },
     CONEXAO_ACADEMICA: { label: 'Redes acadêmicas', noExport: true, noEvidence: true, naoLattes: true, fields: [
-        { key: 'titulo', label: 'Plataforma', type: 'text', required: true, placeholder: 'ex.: ORCID, Lattes, Zotero, ResearchGate, Google Scholar' },
+        { key: 'titulo', label: 'Plataforma', type: 'select', required: true, options: ['Currículo Lattes', 'Web of Science', 'Google Scholar (MyCitation)', 'Zotero', 'Outra'] },
         { key: 'url', label: 'Link (URL)', type: 'text', required: true, placeholder: 'https://...' },
         { key: 'usuario', label: 'Identificador / ID', type: 'text' }] },
     CONEXAO_PROFISSIONAL: { label: 'Redes profissionais', noExport: true, noEvidence: true, naoLattes: true, fields: [
