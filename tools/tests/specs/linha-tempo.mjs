@@ -6,10 +6,10 @@
    (o mesmo já usado em Conformidade/Publicar), então itens com período
    (ex.: Formação) contam num único ano, não em todos os anos do intervalo.
 
-   Ajustes de UI: rótulos das linhas sem o número da categoria; categorias
-   "Fotos de Perfil" e "Dados gerais" (identificação/perfil, não são
-   "produção") não aparecem; anos em ordem decrescente (mais recente
-   primeiro); quadradinhos ~30% menores (16px → 11px).
+   Ajustes de UI: rótulos das linhas sem o número da categoria; a categoria
+   "Dados gerais" (identificação/perfil, não é "produção") não aparece;
+   anos em ordem decrescente (mais recente primeiro); quadradinhos ~30%
+   menores (16px → 11px).
 
    Nuvem de palavras (acima da grade): frequência de palavras extraídas de
    título, palavras-chave ("palavrasChave", separado por ";") e área de
@@ -69,9 +69,9 @@ test('Rótulos das linhas sem número da categoria, anos em ordem decrescente e 
     const items = [
         makeItem('LIVRO_CAPITULO', 'PRODUCOES', { titulo: 'Artigo A', ano: '2019' }),
         makeItem('LIVRO_CAPITULO', 'PRODUCOES', { titulo: 'Artigo B', ano: '2022' }),
-        // Foto de perfil e Prêmios (categoria Dados gerais) têm campo "ano",
-        // mas nenhuma das duas categorias deve aparecer na grade.
-        makeItem('FOTO_PERFIL', 'PERFIL_FOTOS', { titulo: 'Foto oficial', ano: '2021' }),
+        // Foto de perfil e Prêmios (ambos categoria Dados gerais) têm campo
+        // "ano", mas a categoria não deve aparecer na grade.
+        makeItem('FOTO_PERFIL', 'DADOS_GERAIS', { titulo: 'Foto oficial', ano: '2021' }),
         makeItem('PREMIO', 'DADOS_GERAIS', { titulo: 'Prêmio X', ano: '2021', entidade: 'Entidade Y' }),
     ];
     await seedCatalog(page, baseUrl, items);

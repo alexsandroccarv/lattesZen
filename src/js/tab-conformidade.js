@@ -657,11 +657,7 @@ window.TabConformidade = (function () {
             }
         }
 
-        // Tipos de perfil (Identificação, Foto, Endereço, Texto inicial,
-        // Outras informações, Áreas de atuação, Documentos pessoais) são
-        // editados em Configurações e não aparecem na lista de Conformidade.
-        let items = state.items.filter(VIEW_PREDICATE[view])
-            .filter(i => !LattesTypes.isPerfilType(i.typeKey));
+        let items = state.items.filter(VIEW_PREDICATE[view]);
         if (q) items = items.filter(i => (LattesTypes.itemTitle(i) + ' ' + LattesTypes.label(i.typeKey) + ' ' + LattesTypes.categoryLabel(i.categoryKey)).toLowerCase().includes(q));
 
         const cnt = $('#itemCount');
@@ -689,13 +685,6 @@ window.TabConformidade = (function () {
         const item = state.items.find(i => i.id === id);
         if (!item) return;
         if (btn.dataset.act === 'edit' || btn.dataset.act === 'pdf') {
-            // Itens de perfil (Identificação, Foto, Endereço, etc.) são editados em Configurações
-            if (LattesTypes.isPerfilType(item.typeKey)) {
-                window.AppCore.switchTab('config');
-                const sec = $('#perfilSection');
-                if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                return;
-            }
             // Abre o item na aba Catalogar
             window.AppCore.switchTab('catalogar');
             window.AppCore.buildForm(item);

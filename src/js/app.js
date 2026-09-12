@@ -471,6 +471,12 @@
     const PASTA_CONEXOES_ANTIGA = '98 Conexões';
     // Pasta antiga de Atividades livres (99), renumerada para Registros pessoais (20).
     const PASTA_ATIVIDADES_LIVRES_ANTIGA = '99 Atividades livres';
+    // Pastas antigas (subpasta própria, 01.1/01.2) de Foto de perfil/
+    // Documentos pessoais/Identidade/Passaporte — mescladas de volta direto
+    // em "01 Dados gerais" (a pedido do usuário), junto dos demais itens da
+    // categoria, em vez de ficarem soltas em Configurações.
+    const PASTA_FOTOS_PERFIL_ANTIGA = 'Evidências/01 Dados gerais/01.1 Fotos de Perfil';
+    const PASTA_DOCUMENTOS_PESSOAIS_ANTIGA = 'Evidências/01 Dados gerais/01.2 Documentos pessoais';
     // Estrutura de pastas ANTERIOR à reorganização (tudo solto na raiz, sem
     // "Evidências", com Registros pessoais numa única categoria). Usada só
     // para calcular de onde mover os arquivos de cada item já catalogado.
@@ -481,11 +487,13 @@
         ORIENTACOES: '10 Orientações', BANCAS: '11 Bancas', RSC_ADMIN: '97 RSC — Atividades administrativas',
         ATIVIDADES_LIVRES: '20 Registros pessoais',
     };
-    // Tipos cuja categoria muda nesta reorganização (ganham pasta própria):
-    // Foto de perfil e Documentos pessoais saem de Dados gerais; os 15 tipos
-    // de Registros pessoais se separam em 8 categorias (12–19).
+    // Tipos cuja categoria muda nesta reorganização: os 15 tipos de
+    // Registros pessoais se separam em 8 categorias (12–19). Foto de
+    // perfil/Documentos pessoais voltam para Dados gerais (mesclados de
+    // volta, junto de Identidade/Passaporte — ver migração de pastas mais
+    // abaixo, que move os arquivos da subpasta própria pra "01 Dados gerais").
     const RECATEGORIZADOS = {
-        FOTO_PERFIL: 'PERFIL_FOTOS', DOCUMENTO_PESSOAL: 'PERFIL_DOCS',
+        FOTO_PERFIL: 'DADOS_GERAIS', DOCUMENTO_PESSOAL: 'DADOS_GERAIS', DOC_IDENTIDADE: 'DADOS_GERAIS', DOC_PASSAPORTE: 'DADOS_GERAIS',
         AL_CURSO_LIVRE: 'AL_DESENVOLVIMENTO', AL_IDIOMAS: 'AL_DESENVOLVIMENTO', AL_TREINAMENTO: 'AL_DESENVOLVIMENTO', AL_PROJETO_PESSOAL: 'AL_DESENVOLVIMENTO',
         AL_VOLUNTARIADO: 'AL_ENGAJAMENTO', AL_LIDERANCA: 'AL_ENGAJAMENTO', AL_ORG_EVENTO_COM: 'AL_ENGAJAMENTO',
         AL_ESPORTE: 'AL_SAUDE_ESPORTE', AL_COMPETICAO: 'AL_SAUDE_ESPORTE', AL_EXPEDICAO: 'AL_SAUDE_ESPORTE', AL_BEMESTAR: 'AL_SAUDE_ESPORTE',
@@ -683,10 +691,39 @@
         // subpasta de "Evidências/01 Dados Gerais" (01.1/01.2/01.3), em vez
         // de soltas em "Evidências".
         if (!cfg.evidenciasDadosGeraisMigrada && Storage.hasDirectory()) {
-            try { await Storage.renameRootFolder('Evidências/20 Fotos de Perfil', LattesTypes.categoryFolder('PERFIL_FOTOS')); } catch (_) {}
-            try { await Storage.renameRootFolder('Evidências/21 Documentos pessoais', LattesTypes.categoryFolder('PERFIL_DOCS')); } catch (_) {}
+            // PERFIL_FOTOS/PERFIL_DOCS não existem mais como categorias (ver
+            // migração "perfilMescladoDadosGerais" logo abaixo, que já leva
+            // tudo de volta pra "01 Dados gerais") — strings literais no
+            // lugar de LattesTypes.categoryFolder(...) só pra esta migração
+            // antiga continuar funcionando, num install muito antigo que
+            // nunca tenha rodado nenhuma migração desde então.
+            try { await Storage.renameRootFolder('Evidências/20 Fotos de Perfil', PASTA_FOTOS_PERFIL_ANTIGA); } catch (_) {}
+            try { await Storage.renameRootFolder('Evidências/21 Documentos pessoais', PASTA_DOCUMENTOS_PESSOAIS_ANTIGA); } catch (_) {}
             try { await Storage.renameRootFolder('Evidências/00 Outros', LattesTypes.outrosFolder()); } catch (_) {}
             cfg.evidenciasDadosGeraisMigrada = true;
+            Storage.saveSettings(cfg);
+        }
+        // Dados Gerais mesclado entre Configurações e Catalogar (a pedido do
+        // usuário): Foto de perfil, Documentos pessoais, Identidade e
+        // Passaporte deixam de ter subpasta própria (01.1/01.2) e passam a
+        // ficar direto em "01 Dados gerais", junto dos demais itens da
+        // categoria — move os arquivos já existentes uma única vez. Roda
+        // DEPOIS da migração acima (que pode ser a primeira a criar essas
+        // subpastas, num install muito antigo), garantindo que os arquivos
+        // já estejam lá antes de tentar movê-los pra pasta plana.
+        if (!cfg.perfilMescladoDadosGerais && Storage.hasDirectory()) {
+            const destino = LattesTypes.categoryFolder('DADOS_GERAIS');
+            const idsFoto = state.items.filter(i => i.typeKey === 'FOTO_PERFIL').map(i => i.id);
+            for (const id of idsFoto) {
+                try { await Storage.moveItemFiles(id, PASTA_FOTOS_PERFIL_ANTIGA, destino); } catch (_) {}
+            }
+            const idsDocs = state.items.filter(i => ['DOCUMENTO_PESSOAL', 'DOC_IDENTIDADE', 'DOC_PASSAPORTE'].includes(i.typeKey)).map(i => i.id);
+            for (const id of idsDocs) {
+                try { await Storage.moveItemFiles(id, PASTA_DOCUMENTOS_PESSOAIS_ANTIGA, destino); } catch (_) {}
+            }
+            try { await Storage.removeSubdirIfEmpty(PASTA_FOTOS_PERFIL_ANTIGA); } catch (_) {}
+            try { await Storage.removeSubdirIfEmpty(PASTA_DOCUMENTOS_PESSOAIS_ANTIGA); } catch (_) {}
+            cfg.perfilMescladoDadosGerais = true;
             Storage.saveSettings(cfg);
         }
 

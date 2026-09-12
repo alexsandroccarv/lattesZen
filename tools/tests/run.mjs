@@ -66,7 +66,6 @@ import './specs/sumula.mjs';
 import './specs/sumula-docx.mjs';
 import './specs/idiomas-duplicata.mjs';
 import './specs/redes-academicas-plataforma.mjs';
-import './specs/perfil-ordem-cards.mjs';
 
 console.log('Rodando suíte de testes de regressão (Playwright)...\n');
 await runAll();

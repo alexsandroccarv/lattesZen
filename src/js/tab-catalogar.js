@@ -660,6 +660,7 @@ window.TabCatalogar = (function () {
 
             <div id="camposPanel" class="hidden lg:col-span-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
                 <div id="idiomasCadastradosBlock" class="hidden"></div>
+                <div id="areaAtuacaoCadastradasBlock" class="hidden"></div>
                 <div id="dynFields" class="space-y-3"></div>
                 <div id="visibilidadeBlock" class="space-y-3"></div>
                 <div id="rscBlock" class="space-y-3"></div>
@@ -698,7 +699,6 @@ window.TabCatalogar = (function () {
         const selCat = $('#selCategoria');
         selCat.innerHTML = `<option value="">— Selecione —</option>` + LattesTypes.categories
             .filter(c => !c.rscOnly || state.rscEnabled)   // categoria RSC só com o módulo ligado
-            .filter(c => !c.perfilOnly)                     // Fotos de Perfil/Documentos pessoais: só via Configurações
             .map(c => `<option value="${c.key}">${esc(c.num + '. ' + c.label)}</option>`).join('');
         if (currentCat) selCat.value = currentCat;
 
@@ -788,6 +788,7 @@ window.TabCatalogar = (function () {
             $('#dynFields').innerHTML = dynFieldsHtml(camposParaRenderizar, vals);
             associateLabels($('#dynFields'));           // a11y: label for/id + aria-required
             renderIdiomasCadastradosBlock(def, item);
+            renderAreaAtuacaoCadastradasBlock(def, item);
             const obsEvidencia = $('#idiomasObsEvidencia');
             if (obsEvidencia) obsEvidencia.classList.toggle('hidden', !(def && def.key === 'IDIOMAS'));
             if (def && def.fields.some(f => f.type === 'areatree')) wireAreaTree($('#dynFields'), vals);
@@ -845,6 +846,59 @@ window.TabCatalogar = (function () {
             $$('[data-editar-idioma]', bloco).forEach(btn => {
                 btn.addEventListener('click', () => {
                     const alvo = state.items.find(i => i.id === btn.dataset.editarIdioma);
+                    if (alvo) buildForm(alvo, { focus: true });
+                });
+            });
+        }
+
+        // Troca a posição de duas Áreas de atuação (mantém a ordem relativa
+        // dos demais itens do catálogo — só troca os dois objetos de lugar).
+        // A ordem física em state.items é o que a exportação Lattes usa como
+        // SEQUENCIA-AREA-DE-ATUACAO (ver lattes-xml-export.js) — por isso o
+        // reordenamento manual (▲▼), não um sort automático.
+        function moveAreaAtuacao(id, dir) {
+            const areas = state.items.filter(i => i.typeKey === 'AREA_ATUACAO');
+            const pos = areas.findIndex(i => i.id === id);
+            const alvo = pos + dir;
+            if (pos < 0 || alvo < 0 || alvo >= areas.length) return;
+            const idxA = state.items.indexOf(areas[pos]), idxB = state.items.indexOf(areas[alvo]);
+            const tmp = state.items[idxA]; state.items[idxA] = state.items[idxB]; state.items[idxB] = tmp;
+            window.AppCore.saveCatalog();
+        }
+        // Entre a seção de seleção do tipo e o formulário de cadastro da área
+        // de atuação: lista as já cadastradas, na ordem de exportação, com
+        // ▲▼ pra reordenar (mesmo mecanismo que já existia em Configurações)
+        // e um link "Editar" que reabre o formulário naquele item.
+        function renderAreaAtuacaoCadastradasBlock(def, itemAtual) {
+            const bloco = $('#areaAtuacaoCadastradasBlock');
+            if (!bloco) return;
+            const ehArea = !!(def && def.key === 'AREA_ATUACAO');
+            if (!ehArea) { bloco.classList.add('hidden'); bloco.innerHTML = ''; return; }
+            const areas = state.items.filter(i => i.typeKey === 'AREA_ATUACAO');
+            if (!areas.length) { bloco.classList.add('hidden'); bloco.innerHTML = ''; return; }
+            bloco.classList.remove('hidden');
+            bloco.innerHTML = `<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3">
+                <p class="text-xs font-semibold mb-1.5"><i aria-hidden="true" class="fa-solid fa-list-ol mr-1"></i> Áreas de atuação já cadastradas — ▲▼ define a ordem de exportação</p>
+                <ul class="text-sm space-y-1">${areas.map((i, idx) => `<li class="flex items-center gap-2">
+                    <button type="button" data-area-up="${esc(i.id)}" title="Subir" class="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 shrink-0 disabled:opacity-30" ${idx === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                    <button type="button" data-area-down="${esc(i.id)}" title="Descer" class="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 shrink-0 disabled:opacity-30" ${idx === areas.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                    <span class="flex-1 min-w-0 truncate">${esc(LattesTypes.itemTitle(i))}</span>
+                    <button type="button" data-editar-area="${esc(i.id)}" class="text-xs underline text-govbr-700 dark:text-unifesp-300 shrink-0">Editar</button>
+                </li>`).join('')}</ul>
+            </div>`;
+            $$('[data-area-up]', bloco).forEach(btn => btn.addEventListener('click', () => {
+                moveAreaAtuacao(btn.dataset.areaUp, -1);
+                renderAreaAtuacaoCadastradasBlock(def, itemAtual);
+                window.AppCore.renderItemList();
+            }));
+            $$('[data-area-down]', bloco).forEach(btn => btn.addEventListener('click', () => {
+                moveAreaAtuacao(btn.dataset.areaDown, 1);
+                renderAreaAtuacaoCadastradasBlock(def, itemAtual);
+                window.AppCore.renderItemList();
+            }));
+            $$('[data-editar-area]', bloco).forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const alvo = state.items.find(i => i.id === btn.dataset.editarArea);
                     if (alvo) buildForm(alvo, { focus: true });
                 });
             });
@@ -1830,7 +1884,7 @@ window.TabCatalogar = (function () {
     // naquele momento (evita "perder" itens que não batem no filtro atual).
     function itemsDaCategoria(categoryKey) {
         const asc = (state.sortOrder || 'desc') === 'asc';
-        const items = state.items.filter(i => i.categoryKey === categoryKey && !LattesTypes.isPerfilType(i.typeKey));
+        const items = state.items.filter(i => i.categoryKey === categoryKey);
         return sortByYear(items, asc);
     }
     // Próximo/anterior item dentro da MESMA categoria, de forma circular (do

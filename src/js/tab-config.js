@@ -828,315 +828,6 @@ window.TabConfig = (function () {
     /* =====================================================================
        ABA: CONFIGURAÇÕES
        ===================================================================== */
-    /* =====================================================================
-       Dados gerais (perfil) — editados em Configurações
-       ===================================================================== */
-    function perfilCardHtml(tk) {
-        const def = LattesTypes.get(tk);
-        const item = state.items.find(i => i.typeKey === tk);
-        const vals = item ? (item.fields || {}) : {};
-        const resumo = item ? esc(LattesTypes.itemTitle(item)) : 'vazio';
-        const isFoto = tk === 'FOTO_PERFIL';
-        const fotoBlock = isFoto ? `
-            <div>
-                <label class="block text-xs font-semibold mb-1">Imagem (JPEG ou PNG)</label>
-                <div class="flex items-center gap-2">
-                    <input type="file" data-perfil-foto accept="image/jpeg,image/png"
-                           class="flex-1 text-sm text-gray-600 dark:text-gray-300 file:mr-2 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-govbr-600 dark:file:bg-unifesp-700 file:text-white">
-                    ${Storage.storageMode() === 'gdrive' ? `
-                    <button type="button" data-perfil-foto-drive title="Abrir a pasta desta foto no Google Drive" class="shrink-0 w-9 h-9 rounded border border-govbr-200 dark:border-gray-600 text-govbr-700 dark:text-unifesp-300 hover:bg-govbr-100 dark:hover:bg-gray-700 flex items-center justify-center">
-                        <i aria-hidden="true" class="fa-brands fa-google-drive"></i>
-                    </button>` : ''}
-                </div>
-                <img data-perfil-foto-preview class="mt-2 max-h-40 rounded border border-gray-200 dark:border-gray-700 hidden" alt="Foto de perfil">
-            </div>` : '';
-        return `<details class="border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900">
-            <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium flex items-center gap-2">
-                <i aria-hidden="true" class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                <i aria-hidden="true" class="fa-solid ${item ? 'fa-circle-check text-green-600 dark:text-green-400' : 'fa-circle text-gray-300 dark:text-gray-600'} text-xs"></i>
-                ${esc(def.label)}
-                <span class="text-xs font-normal ${item ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} truncate min-w-0">· ${resumo}</span>
-            </summary>
-            <form data-perfil-form="${tk}" class="p-3 space-y-3 border-t border-gray-100 dark:border-gray-700">
-                ${fotoBlock}
-                ${def.fields.map(f => fieldHtml(f, vals[f.key])).join('')}
-                <div class="flex gap-2">
-                    <button type="submit" class="px-3 py-1.5 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-sm"><i class="fa-solid fa-floppy-disk mr-1"></i> Salvar</button>
-                </div>
-            </form>
-        </details>`;
-    }
-    // Conta quantos itens de perfil de instância ÚNICA (cartões + Identidade/
-    // Passaporte) já têm algo preenchido — vira o "X/N preenchidos" no
-    // cabeçalho. Áreas de atuação e Documentos pessoais ficam de fora (são de
-    // instância múltipla, já mostram sua própria contagem no acordeão deles).
-    function perfilProgressCount() {
-        const singleTypes = LattesTypes.perfilTypes().filter(k => k !== 'AREA_ATUACAO' && k !== 'DOCUMENTO_PESSOAL');
-        const preenchidos = singleTypes.filter(tk => state.items.some(i => i.typeKey === tk)).length;
-        return { preenchidos, total: singleTypes.length };
-    }
-    function perfilSectionHtml() {
-        const { preenchidos, total } = perfilProgressCount();
-        return `<section id="perfilSection" class="lg:col-span-2 scroll-mt-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-            <h2 class="text-lg font-bold mb-2 flex items-center gap-2">
-                <i class="fa-solid fa-id-card text-govbr-600 dark:text-unifesp-400"></i> Dados gerais (perfil)
-                <span class="text-sm font-normal text-gray-500">(${preenchidos}/${total} preenchidos)</span>
-            </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Informações autodeclaradas do Currículo Lattes (Identificação, Foto, Endereço, Texto inicial, Outras informações, Áreas de atuação, Identidade, Passaporte e Documentos pessoais). São itens <strong>do Lattes</strong> — a maioria não exige evidência, exceto Identidade, Passaporte e Documentos pessoais.</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
-                ${['IDENTIFICACAO', 'ENDERECO', 'RESUMO_CV', 'OUTRAS_INFO', 'FOTO_PERFIL'].map(perfilCardHtml).join('')}
-                ${areaAtuacaoSectionHtml()}
-                ${fixedDocCardHtml('DOC_IDENTIDADE')}
-                ${fixedDocCardHtml('DOC_PASSAPORTE')}
-                ${documentoPessoalSectionHtml()}
-            </div>
-        </section>`;
-    }
-
-    // Identidade (RG) / Passaporte: itens fixos (sempre presentes, não são
-    // removíveis) dentro de Documentos pessoais — diferente da lista livre de
-    // Documentos pessoais, cada um tem campos próprios e alimenta a
-    // exportação Lattes (NUMERO-IDENTIDADE/ORGAO-EMISSOR/... e
-    // NUMERO-DO-PASSAPORTE em DADOS-GERAIS). "Preencher"/"Editar" abrem o
-    // formulário completo do Catalogar (com upload de evidência) e voltam
-    // para Configurações ao salvar.
-    function fixedDocCardHtml(tk) {
-        const def = LattesTypes.get(tk);
-        const item = state.items.find(i => i.typeKey === tk);
-        const preenchido = !!item;
-        const resumo = item ? esc(LattesTypes.itemTitle(item)) : 'vazio';
-        return `<div class="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-3 py-2 text-sm">
-            <i aria-hidden="true" title="${item && evCount(item) ? 'Com evidência anexada' : 'Sem evidência anexada'}" class="fa-solid ${item && evCount(item) ? 'fa-paperclip text-green-600 dark:text-green-500' : 'fa-file-circle-xmark text-gray-400'} shrink-0"></i>
-            <span class="flex-1 min-w-0 truncate">${esc(def.label)} <span class="text-xs font-normal ${preenchido ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} truncate">· ${resumo}</span></span>
-            <button type="button" data-fixed-doc="${tk}" class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-govbr-600 dark:text-unifesp-400 text-xs font-semibold shrink-0"><i class="fa-solid fa-pen mr-1"></i> ${preenchido ? 'Editar' : 'Preencher'}</button>
-        </div>`;
-    }
-
-    // Documentos pessoais: outro tipo de perfil com VÁRIAS instâncias, mas que
-    // (diferente de Áreas de atuação) usa evidência (o próprio anexo). Em vez
-    // de reconstruir a interface de anexo, a mini-lista aqui só lista/edita/
-    // remove; "Adicionar"/"Editar" abrem o formulário completo do Catalogar
-    // (com upload de arquivo) e voltam para Configurações ao salvar.
-    function documentoPessoalListHtml() {
-        const itens = state.items.filter(i => i.typeKey === 'DOCUMENTO_PESSOAL');
-        if (!itens.length) return `<p class="text-xs text-gray-400 dark:text-gray-500 italic">Nenhum documento cadastrado.</p>`;
-        return `<ul class="space-y-1 mb-2">${itens.map(i => `
-            <li class="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm">
-                <i aria-hidden="true" title="${evCount(i) ? 'Com evidência anexada' : 'Sem evidência anexada'}" class="fa-solid ${evCount(i) ? 'fa-paperclip text-green-600 dark:text-green-500' : 'fa-file-circle-xmark text-red-600 dark:text-red-500'} shrink-0"></i>
-                <span class="flex-1 min-w-0 truncate">${esc(LattesTypes.itemTitle(i))}</span>
-                <button type="button" data-doc-edit="${i.id}" title="Editar" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-govbr-600 dark:text-unifesp-400"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" data-doc-del="${i.id}" title="Remover" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600"><i class="fa-solid fa-trash"></i></button>
-            </li>`).join('')}</ul>`;
-    }
-    function documentoPessoalSectionHtml() {
-        const def = LattesTypes.get('DOCUMENTO_PESSOAL');
-        const n = state.items.filter(i => i.typeKey === 'DOCUMENTO_PESSOAL').length;
-        return `<details class="border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900">
-            <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium flex items-center gap-2">
-                <i aria-hidden="true" class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                ${esc(def.label)}
-                <span id="documentoPessoalCount" class="text-xs font-normal text-gray-400 truncate min-w-0">· ${n} cadastrado${n === 1 ? '' : 's'}</span>
-            </summary>
-            <div class="p-3 space-y-2 border-t border-gray-100 dark:border-gray-700">
-                <div id="documentoPessoalList">${documentoPessoalListHtml()}</div>
-                <button type="button" id="btnAddDocumentoPessoal" class="px-3 py-1.5 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-sm"><i class="fa-solid fa-plus mr-1"></i> Adicionar documento</button>
-            </div>
-        </details>`;
-    }
-    // Seleciona uma categoria no <select> do Catalogar mesmo quando ela foi
-    // filtrada da lista visível (ex.: perfilOnly) — injeta a <option> que
-    // falta antes de atribuir o valor (senão a atribuição é ignorada).
-    function forceSelectCategoria(catKey) {
-        const selCat = $('#selCategoria');
-        if (!selCat) return;
-        if (!selCat.querySelector(`option[value="${catKey}"]`)) {
-            const opt = document.createElement('option');
-            opt.value = catKey;
-            opt.textContent = LattesTypes.categoryNumLabel(catKey);
-            selCat.appendChild(opt);
-        }
-        selCat.value = catKey;
-    }
-    // Abre o item (novo ou existente) no formulário do Catalogar, forçando a
-    // categoria/tipo indicado mesmo fora da lista de tipos visível (Documentos
-    // pessoais/Identidade/Passaporte foram retirados de lá — só alcançáveis
-    // por aqui). Ao salvar, volta a Configurações.
-    function openPerfilDocForm(typeKey, item) {
-        window.AppCore.switchTab('catalogar');
-        buildForm(item, { focus: false });
-        forceSelectCategoria(LattesTypes.primaryCategory(typeKey));
-        if (state._selectTipo) state._selectTipo(typeKey);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    function wireDocumentoPessoalListActions(sec) {
-        const list = sec.querySelector('#documentoPessoalList');
-        if (!list) return;
-        $$('[data-doc-edit]', list).forEach(b => b.addEventListener('click', () => {
-            const item = state.items.find(i => i.id === b.dataset.docEdit);
-            if (item) openPerfilDocForm('DOCUMENTO_PESSOAL', item);
-        }));
-        $$('[data-doc-del]', list).forEach(b => b.addEventListener('click', async () => {
-            const item = state.items.find(i => i.id === b.dataset.docDel);
-            if (!item) return;
-            if (!confirm(`Mover "${LattesTypes.itemTitle(item)}" para a lixeira? Pode ser restaurado depois em Configurações › Lixeira.`)) return;
-            await window.AppCore.deleteItem(item.id);
-            toast('Documento movido para a lixeira.', 'ok');
-            refreshDocumentoPessoalList(sec);
-            window.AppCore.renderItemList();
-        }));
-    }
-    function refreshDocumentoPessoalList(sec) {
-        const list = sec.querySelector('#documentoPessoalList');
-        if (list) list.innerHTML = documentoPessoalListHtml();
-        const n = state.items.filter(i => i.typeKey === 'DOCUMENTO_PESSOAL').length;
-        const count = sec.querySelector('#documentoPessoalCount');
-        if (count) count.textContent = `· ${n} cadastrado${n === 1 ? '' : 's'}`;
-        wireDocumentoPessoalListActions(sec);
-    }
-    function wireDocumentoPessoalSection(sec) {
-        const addBtn = sec.querySelector('#btnAddDocumentoPessoal');
-        if (addBtn) addBtn.addEventListener('click', () => openPerfilDocForm('DOCUMENTO_PESSOAL', undefined));
-        wireDocumentoPessoalListActions(sec);
-    }
-    // Botões "Preencher"/"Editar" dos itens fixos (Identidade/Passaporte)
-    function wireFixedDocButtons(sec) {
-        $$('[data-fixed-doc]', sec).forEach(b => b.addEventListener('click', () => {
-            const tk = b.dataset.fixedDoc;
-            openPerfilDocForm(tk, state.items.find(i => i.typeKey === tk));
-        }));
-    }
-
-    // Áreas de atuação: único tipo de perfil com VÁRIAS instâncias — em vez do
-    // cartão único (perfilCardHtml), mostra uma mini-lista com adicionar/
-    // editar/remover, dentro de Configurações > Dados gerais.
-    function areaAtuacaoListHtml() {
-        const itens = state.items.filter(i => i.typeKey === 'AREA_ATUACAO');
-        if (!itens.length) return `<p class="text-xs text-gray-400 dark:text-gray-500 italic">Nenhuma área cadastrada.</p>`;
-        // Ordem manual (setas ▲▼): a tela real do Lattes deixa priorizar a ordem
-        // de exibição das áreas de atuação — SEQUENCIA-AREA-DE-ATUACAO no XML
-        // segue a ordem daqui.
-        return `<ul class="space-y-1 mb-2">${itens.map((i, idx) => `
-            <li class="flex items-center gap-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5 text-sm">
-                <button type="button" data-area-up="${i.id}" title="Subir" class="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 shrink-0 disabled:opacity-30" ${idx === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
-                <button type="button" data-area-down="${i.id}" title="Descer" class="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 shrink-0 disabled:opacity-30" ${idx === itens.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
-                <span class="flex-1 min-w-0 truncate">${esc(LattesTypes.itemTitle(i))}</span>
-                <button type="button" data-area-edit="${i.id}" title="Editar" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-govbr-600 dark:text-unifesp-400"><i class="fa-solid fa-pen"></i></button>
-                <button type="button" data-area-del="${i.id}" title="Remover" class="w-7 h-7 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600"><i class="fa-solid fa-trash"></i></button>
-            </li>`).join('')}</ul>`;
-    }
-    // Troca a posição de duas Áreas de atuação (mantém a ordem relativa dos
-    // demais itens do catálogo — só troca os dois objetos de lugar).
-    function moveAreaAtuacao(id, dir) {
-        const areas = state.items.filter(i => i.typeKey === 'AREA_ATUACAO');
-        const pos = areas.findIndex(i => i.id === id);
-        const alvo = pos + dir;
-        if (pos < 0 || alvo < 0 || alvo >= areas.length) return;
-        const idxA = state.items.indexOf(areas[pos]), idxB = state.items.indexOf(areas[alvo]);
-        const tmp = state.items[idxA]; state.items[idxA] = state.items[idxB]; state.items[idxB] = tmp;
-        window.AppCore.saveCatalog();
-    }
-    function areaAtuacaoSectionHtml() {
-        const def = LattesTypes.get('AREA_ATUACAO');
-        const n = state.items.filter(i => i.typeKey === 'AREA_ATUACAO').length;
-        return `<details class="border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900">
-            <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium flex items-center gap-2">
-                <i aria-hidden="true" class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                ${esc(def.label)}
-                <span id="areaAtuacaoCount" class="text-xs font-normal text-gray-400 truncate min-w-0">· ${n} cadastrada${n === 1 ? '' : 's'}</span>
-            </summary>
-            <div class="p-3 space-y-2 border-t border-gray-100 dark:border-gray-700">
-                <div id="areaAtuacaoList">${areaAtuacaoListHtml()}</div>
-                <form id="areaAtuacaoForm" class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-700" data-editing-id="">
-                    ${def.fields.map(f => fieldHtml(f, '')).join('')}
-                    <div class="flex items-center gap-2">
-                        <button type="submit" class="px-3 py-1.5 rounded bg-govbr-600 dark:bg-unifesp-700 text-white text-sm"><i class="fa-solid fa-plus mr-1"></i> <span id="areaAtuacaoSubmitLabel">Adicionar área</span></button>
-                        <button type="button" id="areaAtuacaoCancel" class="hidden px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-sm">Cancelar edição</button>
-                    </div>
-                </form>
-            </div>
-        </details>`;
-    }
-    function areaAtuacaoResetForm(form) {
-        form.dataset.editingId = '';
-        wireAreaTree(form, {});
-        const lbl = $('#areaAtuacaoSubmitLabel'); if (lbl) lbl.textContent = 'Adicionar área';
-        const cancel = $('#areaAtuacaoCancel'); if (cancel) cancel.classList.add('hidden');
-    }
-    function refreshAreaAtuacaoList(sec) {
-        const list = sec.querySelector('#areaAtuacaoList');
-        if (list) list.innerHTML = areaAtuacaoListHtml();
-        const n = state.items.filter(i => i.typeKey === 'AREA_ATUACAO').length;
-        const count = sec.querySelector('#areaAtuacaoCount');
-        if (count) count.textContent = `· ${n} cadastrada${n === 1 ? '' : 's'}`;
-        wireAreaAtuacaoListActions(sec);
-    }
-    function wireAreaAtuacaoListActions(sec) {
-        const list = sec.querySelector('#areaAtuacaoList');
-        if (!list) return;
-        $$('[data-area-up]', list).forEach(b => b.addEventListener('click', () => {
-            moveAreaAtuacao(b.dataset.areaUp, -1);
-            refreshAreaAtuacaoList(sec);
-            window.AppCore.renderItemList();
-        }));
-        $$('[data-area-down]', list).forEach(b => b.addEventListener('click', () => {
-            moveAreaAtuacao(b.dataset.areaDown, 1);
-            refreshAreaAtuacaoList(sec);
-            window.AppCore.renderItemList();
-        }));
-        $$('[data-area-edit]', list).forEach(b => b.addEventListener('click', () => {
-            const item = state.items.find(i => i.id === b.dataset.areaEdit);
-            if (!item) return;
-            const form = sec.querySelector('#areaAtuacaoForm');
-            form.dataset.editingId = item.id;
-            wireAreaTree(form, item.fields || {});
-            $('#areaAtuacaoSubmitLabel').textContent = 'Salvar alterações';
-            $('#areaAtuacaoCancel').classList.remove('hidden');
-            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }));
-        $$('[data-area-del]', list).forEach(b => b.addEventListener('click', async () => {
-            const item = state.items.find(i => i.id === b.dataset.areaDel);
-            if (!item) return;
-            if (!confirm(`Mover "${LattesTypes.itemTitle(item)}" para a lixeira?`)) return;
-            await window.AppCore.deleteItem(item.id);
-            const form = sec.querySelector('#areaAtuacaoForm');
-            if (form.dataset.editingId === item.id) areaAtuacaoResetForm(form);
-            refreshAreaAtuacaoList(sec);
-            window.AppCore.renderItemList();
-        }));
-    }
-    function wireAreaAtuacaoSection(sec) {
-        const form = sec.querySelector('#areaAtuacaoForm');
-        if (!form) return;
-        wireAreaTree(form, {});
-        wireAreaAtuacaoListActions(sec);
-        const cancelBtn = sec.querySelector('#areaAtuacaoCancel');
-        if (cancelBtn) cancelBtn.addEventListener('click', () => areaAtuacaoResetForm(form));
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const def = LattesTypes.get('AREA_ATUACAO');
-            const fields = collectFields(form, def);
-            const encResid = normalizeEncoding(fields); // compatibilidade ISO-8859-1
-            if (!validateItemFields(def, fields, form)) return;
-
-            const editingId = form.dataset.editingId;
-            let item = editingId ? state.items.find(i => i.id === editingId) : null;
-            if (!item) item = { id: window.AppCore.uid(), createdAt: window.AppCore.nowISO(), source: 'local', hasPdf: false, evidencias: [], pdfName: null, lattesRef: null };
-            item.lattesItem = true;
-            item.typeKey = 'AREA_ATUACAO';
-            item.categoryKey = LattesTypes.primaryCategory('AREA_ATUACAO');
-            item.fields = fields;
-            item.updatedAt = window.AppCore.nowISO();
-
-            await window.AppCore.persistItem(item);
-            toast(editingId ? 'Área de atuação atualizada.' : 'Área de atuação adicionada.', 'ok');
-            if (encResid) toast(`Atenção: ${encResid} caractere(s) fora do ISO-8859-1 permanecem (ex.: emoji).`, 'aviso');
-            areaAtuacaoResetForm(form);
-            refreshAreaAtuacaoList(sec);
-            window.AppCore.renderItemList();
-        });
-    }
-
     /* ------------------------- Configuração do RSC ------------------------ */
     // Os dados funcionais do servidor (cargo, SIAPE, contatos etc.) ficam na
     // própria aba RSC (ver tab-rsc.js) — aqui só o habilitar/desabilitar do
@@ -1247,100 +938,12 @@ window.TabConfig = (function () {
             toast('Listas da nuvem de palavras salvas.', 'ok');
         });
     }
-    function wirePerfilSection() {
-        const sec = $('#perfilSection');
-        if (!sec) return;
-        // Vários cartões de perfil ficam abertos na mesma seção e vários tipos
-        // reaproveitam as mesmas chaves de campo (ex.: "descricao" em Texto
-        // inicial E em Outras informações) — por isso cada wiring roda
-        // isolado POR FORMULÁRIO, nunca na seção inteira (senão o contador/
-        // validador de um campo "vaza" para o campo de mesmo nome no outro
-        // cartão, já que querySelector pega só o primeiro do documento).
-        $$('[data-perfil-form]', sec).forEach(form => {
-            wireValidators(form);
-            wireCounters(form);
-            wireDateBr(form);
-            wireNA(form);
-            wireConditional(form, LattesTypes.get(form.dataset.perfilForm));
-            wireRepeater(form, LattesTypes.get(form.dataset.perfilForm));
-        });
-        $$('[data-perfil-foto]', sec).forEach(inp => inp.addEventListener('change', (e) => {
-            const f = e.target.files[0];
-            if (!f) return;
-            const err = window.AppCore.checkEvidenceFile(f, ['jpg', 'jpeg', 'png']);
-            if (err) { toast(err, 'aviso'); e.target.value = ''; return; }
-            const prev = inp.parentElement.parentElement.querySelector('[data-perfil-foto-preview]');
-            if (prev) { prev.src = URL.createObjectURL(f); prev.classList.remove('hidden'); }
-        }));
-        $$('[data-perfil-foto-drive]', sec).forEach(btn => btn.addEventListener('click', () => {
-            const foto = state.items.find(i => i.typeKey === 'FOTO_PERFIL');
-            const catKey = foto ? foto.categoryKey : LattesTypes.primaryCategory('FOTO_PERFIL');
-            window.AppCore.openGDriveFolder(LattesTypes.categoryFolder(catKey));
-        }));
-        // Carrega a foto atual (se houver) no preview
-        (async () => {
-            const foto = state.items.find(i => i.typeKey === 'FOTO_PERFIL' && evCount(i));
-            const prev = sec.querySelector('[data-perfil-foto-preview]');
-            if (!foto || !prev) return;
-            const ev = window.AppCore.evListFromItem(foto)[0];
-            try {
-                const url = await Storage.readAttachmentUrl(ev.basename, LattesTypes.categoryFolder('PERFIL_FOTOS'), ev.ext);
-                if (url) { prev.src = url; prev.classList.remove('hidden'); }
-            } catch (_) {}
-        })();
-        $$('[data-perfil-form]', sec).forEach(form => form.addEventListener('submit', onPerfilSubmit));
-        wireAreaAtuacaoSection(sec);
-        wireFixedDocButtons(sec);
-        wireDocumentoPessoalSection(sec);
-    }
-    async function onPerfilSubmit(e) {
-        e.preventDefault();
-        const form = e.currentTarget;
-        const tk = form.dataset.perfilForm;
-        const def = LattesTypes.get(tk);
-        const fields = collectFields(form, def);
-        const encResid = normalizeEncoding(fields); // compatibilidade ISO-8859-1
-        if (!validateItemFields(def, fields, form)) return;
-
-        let item = state.items.find(i => i.typeKey === tk) || {
-            id: window.AppCore.uid(), createdAt: window.AppCore.nowISO(), source: 'local', hasPdf: false, evidencias: [], pdfName: null, lattesRef: null,
-        };
-        item.lattesItem = true;              // mantém relacionado ao Lattes
-        item.typeKey = tk;
-        item.categoryKey = LattesTypes.primaryCategory(tk);
-        item.fields = fields;
-        item.updatedAt = window.AppCore.nowISO();
-
-        // Foto de perfil: a imagem é o conteúdo do item (não uma comprovação)
-        if (tk === 'FOTO_PERFIL') {
-            const inp = form.querySelector('[data-perfil-foto]');
-            const file = inp && inp.files[0];
-            if (file) {
-                const ext = window.AppCore.fileExt(file);
-                item.evidencias = [{ basename: item.id, ext, name: file.name, publica: true }];
-                item.hasPdf = true; item.fileExt = ext; item.pdfName = file.name;
-                if (Storage.hasDirectory()) {
-                    try { await Storage.writeAttachment(item.id, file, LattesTypes.categoryFolder(item.categoryKey), ext); }
-                    catch (err) { toast('Falha ao gravar a imagem: ' + err.message, 'aviso'); }
-                } else {
-                    toast('Imagem não gravada: configure um diretório em Configurações.', 'aviso');
-                }
-            }
-        }
-
-        await window.AppCore.persistItem(item);
-        toast(`${def.label} salvo.`, 'ok');
-        if (encResid) toast(`Atenção: ${encResid} caractere(s) fora do ISO-8859-1 permanecem (ex.: emoji).`, 'aviso');
-        render();
-        window.AppCore.renderItemList();
-    }
 
     // Grupos de Configurações — fonte única usada tanto pelos divisores
     // (cfgGroup) quanto pelo índice fixo (cfgIndexHtml), pra manter os dois
     // sempre em sincronia (mesma ordem, mesmo ícone, mesmo id de âncora).
     const CFG_GROUPS = [
         { id: 'grp-armazenamento', icon: 'fa-folder-tree', label: 'Armazenamento e backup' },
-        { id: 'grp-perfil', icon: 'fa-id-card', label: 'Meu perfil' },
         { id: 'grp-fontes', icon: 'fa-arrow-right-arrow-left', label: 'Trazer e levar dados' },
         { id: 'grp-opcionais', icon: 'fa-puzzle-piece', label: 'Recursos opcionais' },
         { id: 'grp-risco', icon: 'fa-triangle-exclamation', label: 'Zona de risco' },
@@ -1383,17 +986,15 @@ window.TabConfig = (function () {
         </a>`;
     }
     // Card-resumo no topo da aba: dá uma visão de status em segundos, sem
-    // abrir nada — diretório configurado?, perfil quanto preenchido?, backup
-    // em dia? Cada item já é um atalho pra seção correspondente.
+    // abrir nada — diretório configurado?, backup em dia? Cada item já é um
+    // atalho pra seção correspondente.
     function statusChecklistHtml(dirName, storageMode) {
-        const { preenchidos, total } = perfilProgressCount();
         const sinceBackup = (Storage.loadSettings() || {}).sinceBackup || 0;
         const dirDetail = dirName ? `${storageMode === 'gdrive' ? 'Google Drive' : 'Pasta local'} — ${dirName}` : 'Não configurado ainda';
         const backupDetail = sinceBackup ? `${sinceBackup} alteraç${sinceBackup === 1 ? 'ão' : 'ões'} desde o último backup` : 'Em dia — sem alterações desde o último backup';
         return `
-        <section aria-label="Resumo da configuração" class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <section aria-label="Resumo da configuração" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             ${statusItemHtml(dirName ? 'ok' : 'warn', 'fa-folder-open', 'Diretório', dirDetail, 'dirSection')}
-            ${statusItemHtml('info', 'fa-id-card', 'Perfil', `${preenchidos}/${total} preenchidos`, 'perfilSection')}
             ${statusItemHtml(sinceBackup >= 10 ? 'warn' : 'ok', 'fa-clock-rotate-left', 'Backup', backupDetail, 'backupSection')}
         </section>`;
     }
@@ -1625,14 +1226,11 @@ window.TabConfig = (function () {
                 </section>
 
                 ${cfgGroup(CFG_GROUPS[1])}
-                ${perfilSectionHtml()}
-
-                ${cfgGroup(CFG_GROUPS[2])}
                 ${lattesXmlSectionHtml()}
                 ${orcidImportSectionHtml()}
                 ${bibImportSectionHtml()}
 
-                ${cfgGroup(CFG_GROUPS[3])}
+                ${cfgGroup(CFG_GROUPS[2])}
                 ${rscSectionHtml()}
                 ${sumulaSectionHtml()}
                 ${pubWebSectionHtml()}
@@ -1685,7 +1283,7 @@ window.TabConfig = (function () {
                 </details>
                 ${themeSectionHtml()}
 
-                ${cfgGroup(CFG_GROUPS[4])}
+                ${cfgGroup(CFG_GROUPS[3])}
                 ${lixeiraSectionHtml()}
                 <section class="bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 p-4">
                     <button id="btnClear" class="px-3 py-2 rounded bg-red-600 text-white text-sm"><i class="fa-solid fa-trash mr-1"></i> Limpar catálogo (índice local)</button>
@@ -1695,7 +1293,6 @@ window.TabConfig = (function () {
 
         wireCfgIndex();
         wireThemeSection();
-        wirePerfilSection();
         wireRscConfig();
         wireSumulaConfig();
         wirePubWebConfig();

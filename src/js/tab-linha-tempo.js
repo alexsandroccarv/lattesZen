@@ -24,10 +24,10 @@
 window.TabLinhaTempo = (function () {
     const { state, $, esc, itemYear } = window.AppCore;
 
-    // Categorias que existem só para edição em Configurações/Perfil (não são
-    // "produção" — identificação, endereço, foto de perfil etc.) e por isso
-    // não entram nem na nuvem de palavras, nem na grade.
-    const CATEGORIAS_EXCLUIDAS = new Set(['PERFIL_FOTOS', 'DADOS_GERAIS']);
+    // Categoria "não-produção" (identificação, endereço, foto de perfil,
+    // documentos pessoais etc.) — não entra nem na nuvem de palavras, nem na
+    // grade.
+    const CATEGORIAS_EXCLUIDAS = new Set(['DADOS_GERAIS']);
 
     /* ------------------------------ Nuvem de palavras ------------------------------ */
 

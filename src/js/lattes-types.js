@@ -287,7 +287,10 @@ const TYPES = {
             'Múltipla': 'Associação de duas ou mais deficiências (Decreto nº 3.298/1999).',
         } },
     ] },
-    FOTO_PERFIL: { label: 'Foto de perfil', noExport: true, noEvidence: true, singleton: true, perfil: true, accept: 'image/jpeg,image/png', fields: [{ key: 'titulo', label: 'Descrição', type: 'text', placeholder: 'ex.: Foto oficial 2025' }] },
+    // Antes noEvidence (widget de foto próprio em Configurações); agora usa
+    // o bloco padrão de evidências do Catalogar, igual aos demais tipos —
+    // accept já restringe a imagem, e singleton mantém só uma foto vigente.
+    FOTO_PERFIL: { label: 'Foto de perfil', noExport: true, singleton: true, perfil: true, accept: 'image/jpeg,image/png', fields: [{ key: 'titulo', label: 'Descrição', type: 'text', placeholder: 'ex.: Foto oficial 2025' }] },
     DOCUMENTO_PESSOAL: { label: 'Documentos pessoais', noExport: true, perfil: true, accept: 'application/pdf,image/jpeg,image/png', fields: [
         { key: 'tipoDoc', label: 'Tipo de documento', type: 'select', required: true, options: ['Título de eleitor', 'Certidão de nascimento', 'Certidão de casamento', 'Conselho de classe', 'Diploma / Certificado', 'Carteira profissional', 'CNH', 'Comprovante de residência', 'Reservista', 'PIS/PASEP', 'Outro'] },
         { key: 'titulo', label: 'Descrição / Nº do documento', type: 'text', required: true },
@@ -1311,17 +1314,20 @@ const AL_NOTE = 'Os itens registrados nesta categoria não são vinculados ao Cu
 
 window.LATTES_CATEGORIES = [
     { num: '01', key: 'DADOS_GERAIS', label: 'Dados gerais', icon: 'fa-id-card',
-      // Identificação, Endereço, Texto inicial e Outras informações são
-      // editados em Configurações (perfil); Foto de perfil e Documentos
-      // pessoais têm categoria própria (20/21). Aqui ficam os demais itens
-      // de 01 (Conexões incluída no final).
-      types: ['LICENCA', 'IDIOMAS', 'PREMIO', 'CONEXAO_SOCIAL', 'CONEXAO_ACADEMICA', 'CONEXAO_PROFISSIONAL'] },
+      // Antes editados só em Configurações (perfil); mesclados aqui pra
+      // cadastrar/editar tudo pelo mesmo fluxo do Catalogar, como qualquer
+      // outro item (a pedido do usuário). Fotos/Documentos deixam de ter
+      // subpasta própria (01.1/01.2) — ver migração em app.js.
+      groups: [
+          { label: null, types: ['IDENTIFICACAO', 'ENDERECO', 'RESUMO_CV', 'OUTRAS_INFO', 'FOTO_PERFIL'] },
+          { label: 'Documentos pessoais', types: ['DOC_IDENTIDADE', 'DOC_PASSAPORTE', 'DOCUMENTO_PESSOAL'] },
+          { label: null, types: ['LICENCA', 'IDIOMAS', 'PREMIO', 'CONEXAO_SOCIAL', 'CONEXAO_ACADEMICA', 'CONEXAO_PROFISSIONAL'] },
+      ] },
     { num: '02', key: 'FORMACAO', label: 'Formação', icon: 'fa-user-graduate',
       types: ['FORMACAO_ACADEMICA', 'POS_DOUTORADO', 'FORMACAO_COMPLEMENTAR'] },
     { num: '03', key: 'ATUACAO', label: 'Atuação', icon: 'fa-briefcase',
-      // Áreas de atuação é editada em Configurações (perfil), não aqui.
       groups: [
-          { label: null, types: ['VINCULO_PROFISSIONAL', 'LINHA_PESQUISA', 'CORPO_EDITORIAL', 'COMITE_ASSESSORAMENTO', 'REVISOR_PERIODICO', 'REVISOR_FOMENTO'] },
+          { label: null, types: ['AREA_ATUACAO', 'VINCULO_PROFISSIONAL', 'LINHA_PESQUISA', 'CORPO_EDITORIAL', 'COMITE_ASSESSORAMENTO', 'REVISOR_PERIODICO', 'REVISOR_FOMENTO'] },
           { label: 'Atividades de Atuação profissional', types: ['ATIV_DIRECAO', 'ATIV_PESQUISA', 'ATIV_ENSINO', 'ATIV_ESTAGIO', 'ATIV_SERVICO', 'ATIV_EXTENSAO', 'ATIV_TREINAMENTO', 'ATIV_OUTRA', 'ATIV_CONSELHO'] },
       ] },
     { num: '04', key: 'PROJETOS', label: 'Projetos', icon: 'fa-diagram-project',
@@ -1358,20 +1364,13 @@ window.LATTES_CATEGORIES = [
       note: AL_NOTE, types: ['AL_IMPRENSA_CITACAO', 'AL_IMPRENSA_ENTREVISTADO', 'AL_IMPRENSA_OUTRA'] },
     { num: '20', key: 'RSC_GRUPO', label: 'Grupos de Pesquisa', icon: 'fa-microscope', naoLattes: true, rscOnly: true,
       types: ['RSC_GRUPO_PESQUISA'] },
-    // Fotos de Perfil e Documentos pessoais: editados em Configurações
-    // (perfil), não em Catalogar — por isso `perfilOnly` (fora do seletor
-    // de categoria do Catalogar), mas continuam vinculados ao Lattes. Ficam
-    // como subpasta de "01 Dados Gerais" (`subOf`), não soltas em
-    // "Evidências" — daí o num com ponto (01.1, 01.2).
-    { num: '01.1', key: 'PERFIL_FOTOS', label: 'Fotos de Perfil', icon: 'fa-camera', perfilOnly: true, subOf: 'DADOS_GERAIS', types: ['FOTO_PERFIL'] },
     { num: '21', key: 'RSC_CRISE_SAUDE', label: 'Atuação em Crise de Saúde Pública', icon: 'fa-virus', naoLattes: true, rscOnly: true,
       types: ['RSC_CRISE_SAUDE_ATUACAO'] },
-    { num: '01.2', key: 'PERFIL_DOCS', label: 'Documentos pessoais', icon: 'fa-address-card', perfilOnly: true, subOf: 'DADOS_GERAIS', types: ['DOCUMENTO_PESSOAL', 'DOC_IDENTIDADE', 'DOC_PASSAPORTE'] },
 ];
 
 // Categoria "primária" de cada tipo (usada pelo importador do XML)
 const PRIMARY_CATEGORY = {
-    IDENTIFICACAO: 'DADOS_GERAIS', FOTO_PERFIL: 'PERFIL_FOTOS', DOCUMENTO_PESSOAL: 'PERFIL_DOCS', DOC_IDENTIDADE: 'PERFIL_DOCS', DOC_PASSAPORTE: 'PERFIL_DOCS', ENDERECO: 'DADOS_GERAIS', LICENCA: 'DADOS_GERAIS', IDIOMAS: 'DADOS_GERAIS',
+    IDENTIFICACAO: 'DADOS_GERAIS', FOTO_PERFIL: 'DADOS_GERAIS', DOCUMENTO_PESSOAL: 'DADOS_GERAIS', DOC_IDENTIDADE: 'DADOS_GERAIS', DOC_PASSAPORTE: 'DADOS_GERAIS', ENDERECO: 'DADOS_GERAIS', LICENCA: 'DADOS_GERAIS', IDIOMAS: 'DADOS_GERAIS',
     PREMIO: 'DADOS_GERAIS', RESUMO_CV: 'DADOS_GERAIS', OUTRAS_INFO: 'DADOS_GERAIS',
     FORMACAO_ACADEMICA: 'FORMACAO', POS_DOUTORADO: 'FORMACAO', FORMACAO_COMPLEMENTAR: 'FORMACAO',
     VINCULO_PROFISSIONAL: 'ATUACAO', LINHA_PESQUISA: 'ATUACAO', CORPO_EDITORIAL: 'ATUACAO', COMITE_ASSESSORAMENTO: 'ATUACAO', REVISOR_PERIODICO: 'ATUACAO', REVISOR_FOMENTO: 'ATUACAO', AREA_ATUACAO: 'ATUACAO',

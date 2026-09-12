@@ -72,11 +72,16 @@ window.TabPublicar = (function () {
     }
     const PUB_ICON = { DADOS_GERAIS: '🪪', FORMACAO: '🎓', ATUACAO: '💼', PROJETOS: '🧩', PRODUCOES: '📚', PATENTES_REGISTROS: '📜', INOVACAO: '💡', EDUCACAO_CT: '📢', EVENTOS: '📅', ORIENTACOES: '👥', BANCAS: '⚖️',
         AL_DESENVOLVIMENTO: '🌱', AL_ENGAJAMENTO: '🤝', AL_SAUDE_ESPORTE: '🏃', AL_INTERESSES: '🎨', AL_CERTIFICACAO_CAT: '📜', AL_FILIACAO_CAT: '🪪', AL_CONCURSO_CAT: '📋', AL_IMPRENSA_CAT: '📰' };
-    const PUB_EXCLUDE_TYPES = new Set(['IDENTIFICACAO', 'FOTO_PERFIL', 'ENDERECO', 'RESUMO_CV', 'OUTRAS_INFO', 'DOCUMENTO_PESSOAL']);
+    const PUB_EXCLUDE_TYPES = new Set(['IDENTIFICACAO', 'FOTO_PERFIL', 'ENDERECO', 'RESUMO_CV', 'OUTRAS_INFO', 'DOCUMENTO_PESSOAL', 'DOC_IDENTIDADE', 'DOC_PASSAPORTE', 'AREA_ATUACAO']);
     // Categorias 12–19 ("Além do Lattes": Desenvolvimento Pessoal, Engajamento,
     // Saúde/Esporte, Interesses, Certificações, Filiações, Concursos, Imprensa)
     // viram uma única seção mesclada na página pública. Fora do intervalo: a
-    // 97 (RSC — administrativo, tema à parte) e 20/21 (perfil: foto/documentos).
+    // 97 (RSC — administrativo) e 20/21 (RSC — grupo de pesquisa/crise de
+    // saúde, temas à parte). Os tipos "de perfil" (Identificação, Foto,
+    // Endereço, Texto inicial, Outras informações, Documentos pessoais,
+    // Identidade, Passaporte, Área de atuação) moram na categoria 01 mas são
+    // excluídos do laço abaixo via PUB_EXCLUDE_TYPES — já renderizados à
+    // parte, no cabeçalho da página.
     const PUB_MERGE_LABEL = 'Além do Currículo Lattes';
     const PUB_MERGE_ID = 'sec-extras';
 
@@ -98,8 +103,9 @@ window.TabPublicar = (function () {
         const orcid = (ident && ident.fields.orcid || '').trim();
         const lattesUrl = (ident && ident.fields.url || '').trim();
         const local = endereco ? [endereco.fields.cidade, endereco.fields.uf].filter(Boolean).join(' / ') : '';
-        // Áreas de atuação: editadas em Configurações (perfil), não passam
-        // mais pelo laço de categorias abaixo — entram direto no cabeçalho.
+        // Áreas de atuação: excluídas de PUB_EXCLUDE_TYPES do laço de
+        // categorias abaixo (senão apareceriam duas vezes) — entram direto
+        // no cabeçalho.
         const areasAtuacao = byType('AREA_ATUACAO').map(it => LattesTypes.itemTitle(it)).filter(Boolean);
 
         let foto = null;
@@ -107,7 +113,7 @@ window.TabPublicar = (function () {
             const ev = (Array.isArray(fotoItem.evidencias) && fotoItem.evidencias[0]) || (fotoItem.hasPdf ? { basename: fotoItem.id, ext: fotoItem.fileExt || 'jpg' } : null);
             if (ev) {
                 try {
-                    const f = await Storage.readAttachmentFile(ev.basename, LattesTypes.categoryFolder('PERFIL_FOTOS'), ev.ext);
+                    const f = await Storage.readAttachmentFile(ev.basename, LattesTypes.categoryFolder(fotoItem.categoryKey), ev.ext);
                     if (f) {
                         if (external) {
                             await Storage.writeFile(`foto.${ev.ext}`, f, `${LattesTypes.publicacaoFolder()}/${PUB_IMG_SUBDIR}`);
