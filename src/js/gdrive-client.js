@@ -315,29 +315,28 @@ window.GDriveClient = (function () {
     // escolher a pasta aberta no momento, não só navegar por ela. Retorna
     // {id, name} da pasta escolhida, ou null se cancelado.
     //
-    // ViewId.DOCS (não ViewId.FOLDERS) + setIncludeFolders(true) — igual ao
-    // pickFile() acima: é isto que dá a navegação hierárquica de verdade
-    // (entrar em pasta dentro de pasta, com breadcrumb), igual à interface
-    // completa do Drive. ViewId.FOLDERS é uma view mais simples/achatada do
-    // Picker, sem essa navegação — não servia pra achar uma pasta que não
-    // estivesse solta na raiz. setMimeTypes(...) filtra a listagem só pra
-    // pastas (mais limpo pra esta escolha específica), sem perder a
-    // navegação — setIncludeFolders continua garantindo que dá pra entrar
-    // nelas.
+    // Mesma configuração de view do pickFile() acima (ViewId.DOCS +
+    // setIncludeFolders(true), SEM setMimeTypes) — não só ViewId.DOCS: uma
+    // tentativa anterior manteve ViewId.DOCS mas acrescentou
+    // setMimeTypes(FOLDER_MIME) pra filtrar a listagem só pra pastas, e isso
+    // quebrou a navegação hierárquica em "Meu Drive" (ficava sem
+    // entrar/sair de subpastas). Como pickFile() nunca usou setMimeTypes e é
+    // a única view deste arquivo com navegação hierárquica confirmada,
+    // pickFolder() passou a copiá-la exatamente, só ligando
+    // setSelectFolderEnabled(true) — a listagem volta a incluir arquivos,
+    // mas o usuário só pode escolher uma pasta mesmo assim (arquivos não são
+    // selecionáveis com essa flag).
     async function pickFolder(developerKey) {
         if (!developerKey) throw new Error('Chave de API do Google (Picker) não configurada neste site.');
         await ensureFreshToken();
         await loadPickerLib();
         return new Promise((resolve, reject) => {
             try {
-                const FOLDER_MIME = 'application/vnd.google-apps.folder';
                 const viewMeuDrive = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
-                    .setMimeTypes(FOLDER_MIME)
                     .setSelectFolderEnabled(true);
                 const viewDrivesCompartilhados = new window.google.picker.DocsView(window.google.picker.ViewId.DOCS)
                     .setIncludeFolders(true)
-                    .setMimeTypes(FOLDER_MIME)
                     .setSelectFolderEnabled(true)
                     .setEnableDrives(true)
                     .setLabel('Drives compartilhados');
