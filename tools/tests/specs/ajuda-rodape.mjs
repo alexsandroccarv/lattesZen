@@ -111,10 +111,6 @@ test('Página ajuda.html (Início Rápido) linka para os dois guias específicos
 });
 
 test('Alto contraste e escala de fonte continuam funcionando no rodapé (index.html)', async ({ page, baseUrl }) => {
-    // Sem decisão de cookies salva, o aviso (#lzCookieBanner) cobre o rodapé
-    // e intercepta o clique — irrelevante pro que este teste cobre, então
-    // pré-decide "recusado" antes da 1ª carga (mesmo padrão de analytics.mjs).
-    await page.addInitScript(() => { try { localStorage.setItem('lz_cookie_consent', 'rejected'); } catch (e) {} });
     await page.goto(baseUrl + '/index.html');
     await page.waitForTimeout(300);
 

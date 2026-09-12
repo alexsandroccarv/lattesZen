@@ -4,8 +4,9 @@
    Só carrega o gtag.js quando (a) APP_CONFIG.analyticsId (ver js/config.js)
    tiver um ID de mensuração real configurado — não o valor de exemplo
    "G-XXXXXXXXXX" nem vazio — e (b) o usuário tiver aceitado o aviso de
-   cookies (ver js/cookie-consent.js). Sem consentimento explícito salvo,
-   nenhuma requisição sai do navegador rumo ao Google.
+   cookies (ver js/cookie-consent.js, que bloqueia o uso do app até essa
+   decisão). Sem "accepted" salvo, nenhuma requisição sai do navegador rumo
+   ao Google.
    ========================================================================== */
 (function () {
     const CONSENT_KEY = 'lz_cookie_consent';
@@ -41,9 +42,6 @@
         aceitar() {
             try { localStorage.setItem(CONSENT_KEY, 'accepted'); } catch (e) {}
             if (idConfigurado()) carregarGtag();
-        },
-        recusar() {
-            try { localStorage.setItem(CONSENT_KEY, 'rejected'); } catch (e) {}
         },
     };
 

@@ -1,29 +1,29 @@
 /* ==========================================================================
-   lattesZen — Aviso de cookies (consentimento para o Google Analytics)
+   lattesZen — Aviso de cookies (consentimento obrigatório para o Google
+   Analytics)
    --------------------------------------------------------------------------
    Só aparece quando js/analytics.js reporta um ID de mensuração real
-   configurado e ainda não há decisão salva (aceitar/recusar). Estilo em
-   linha (não depende do Tailwind CDN) para funcionar mesmo se aquele
-   recurso de terceiros não carregar.
+   configurado e o usuário ainda não aceitou. Enquanto não aceitar, um
+   overlay cobre a página inteira e bloqueia qualquer interação com o app —
+   não existe botão "Recusar": ou aceita, ou fica travado (o Analytics só
+   é opcional para quem administra a instância, apagando o ID de
+   config.js — não para quem já está usando uma instância com ID
+   configurado). Estilo em linha (não depende do Tailwind CDN) pra
+   funcionar mesmo se aquele recurso de terceiros não carregar.
    ========================================================================== */
 (function () {
-    function botao(rotulo, primario) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = rotulo;
-        b.style.cssText = primario
-            ? 'background:#1351B4;color:#fff;border:1px solid #1351B4;border-radius:6px;padding:8px 18px;cursor:pointer;font:inherit;font-weight:600'
-            : 'background:transparent;color:#fff;border:1px solid #ADCDFF;border-radius:6px;padding:8px 18px;cursor:pointer;font:inherit';
-        return b;
-    }
-
     function montar() {
         if (!window.LzAnalytics || !window.LzAnalytics.idConfigurado()) return;
-        if (window.LzAnalytics.consentimentoAtual()) return;
+        if (window.LzAnalytics.consentimentoAtual() === 'accepted') return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'lzCookieOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(7,29,65,.6)';
 
         const barra = document.createElement('div');
         barra.id = 'lzCookieBanner';
-        barra.setAttribute('role', 'region');
+        barra.setAttribute('role', 'alertdialog');
+        barra.setAttribute('aria-modal', 'true');
         barra.setAttribute('aria-label', 'Aviso de cookies');
         barra.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#071D41;'
             + 'color:#fff;padding:16px 20px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;'
@@ -37,21 +37,28 @@
             + '<a href="privacidade.html" style="color:#ADCDFF;text-decoration:underline" target="_blank" rel="noopener">'
             + 'Saiba mais na Política de Privacidade</a>.';
 
-        const botoes = document.createElement('div');
-        botoes.style.cssText = 'display:flex;gap:10px;flex:0 0 auto';
-
-        const btnAceitar = botao('Aceitar', true);
-        const btnRecusar = botao('Recusar', false);
+        const btnAceitar = document.createElement('button');
+        btnAceitar.type = 'button';
         btnAceitar.id = 'lzCookieAceitar';
-        btnRecusar.id = 'lzCookieRecusar';
+        btnAceitar.textContent = 'Aceitar';
+        btnAceitar.style.cssText = 'background:#1351B4;color:#fff;border:1px solid #1351B4;border-radius:6px;'
+            + 'padding:8px 18px;cursor:pointer;font:inherit;font-weight:600;flex:0 0 auto';
 
-        btnAceitar.addEventListener('click', () => { window.LzAnalytics.aceitar(); barra.remove(); });
-        btnRecusar.addEventListener('click', () => { window.LzAnalytics.recusar(); barra.remove(); });
+        // Trava o scroll do documento por trás do overlay enquanto a decisão
+        // não é tomada — sem isto, roda do mouse ainda passaria por baixo.
+        const overflowAnterior = document.documentElement.style.overflow;
+        document.documentElement.style.overflow = 'hidden';
 
-        botoes.appendChild(btnAceitar);
-        botoes.appendChild(btnRecusar);
+        btnAceitar.addEventListener('click', () => {
+            window.LzAnalytics.aceitar();
+            document.documentElement.style.overflow = overflowAnterior;
+            overlay.remove();
+            barra.remove();
+        });
+
         barra.appendChild(texto);
-        barra.appendChild(botoes);
+        barra.appendChild(btnAceitar);
+        document.body.appendChild(overlay);
         document.body.appendChild(barra);
     }
 

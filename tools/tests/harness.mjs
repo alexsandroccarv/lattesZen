@@ -150,6 +150,14 @@ export async function runAll() {
                 localStorage.setItem('lz_settings', JSON.stringify(s));
             } catch (_) {}
         });
+        // Simula, por padrão, uma instalação SEM Google Analytics configurado
+        // — o valor real de APP_CONFIG.analyticsId (config.js) é o da
+        // instância oficial, e o aviso de cookies agora BLOQUEIA o app até
+        // ser aceito; sem isto, todo teste que não seja sobre o próprio
+        // aviso ficaria travado atrás dele. analytics.mjs sobrescreve este
+        // valor por teste (via page.addInitScript, registrado depois deste
+        // — roda por último) quando precisa simular um ID real configurado.
+        await context.addInitScript(() => { window.__LZ_TEST_ANALYTICS_ID = 'G-XXXXXXXXXX'; });
         const page = await context.newPage();
         // O timeout padrão do Playwright (30s) pra ações/navegação já causou
         // falhas em cadeia no CI: o runner às vezes fica momentaneamente
