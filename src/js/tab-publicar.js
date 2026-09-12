@@ -125,7 +125,9 @@ window.TabPublicar = (function () {
         ['CONEXAO_ACADEMICA', 'CONEXAO_PROFISSIONAL', 'CONEXAO_SOCIAL'].forEach(tk => byType(tk).forEach(i => {
             const u = (i.fields.url || '').trim(); if (!u) return;
             const url = (/@/.test(u) && !/^https?:|^mailto:/i.test(u)) ? 'mailto:' + u : u;
-            contatos.push({ grupo: LattesTypes.label(tk), plataforma: i.fields.titulo || LattesTypes.label(tk), url, usuario: i.fields.usuario || '' });
+            // itemTitle() já resolve "Outra" (Redes acadêmicas) pro nome
+            // digitado em "Nome da rede", em vez do rótulo genérico "Outra".
+            contatos.push({ grupo: LattesTypes.label(tk), plataforma: LattesTypes.itemTitle(i) || LattesTypes.label(tk), url, usuario: i.fields.usuario || '' });
         }));
 
         const secoes = [];

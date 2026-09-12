@@ -1262,10 +1262,16 @@ const TYPES = {
         { key: 'titulo', label: 'Rede / Plataforma', type: 'text', required: true, placeholder: 'ex.: Instagram, Facebook, X, YouTube, TikTok' },
         { key: 'url', label: 'Link (URL)', type: 'text', required: true, placeholder: 'https://...' },
         { key: 'usuario', label: 'Usuário / @', type: 'text' }] },
+    // Sem "Identificador / ID": o identificador do usuário na plataforma já
+    // faz parte do próprio Link (URL) — campo à parte seria redundante.
     CONEXAO_ACADEMICA: { label: 'Redes acadêmicas', noExport: true, noEvidence: true, naoLattes: true, fields: [
         { key: 'titulo', label: 'Plataforma', type: 'select', required: true, options: ['Currículo Lattes', 'Web of Science', 'Google Scholar (MyCitation)', 'Zotero', 'Outra'] },
-        { key: 'url', label: 'Link (URL)', type: 'text', required: true, placeholder: 'https://...' },
-        { key: 'usuario', label: 'Identificador / ID', type: 'text' }] },
+        // Não marcado required: um campo obrigatório com disabledWhen fica
+        // sempre "faltando" quando desabilitado (collectFields zera o valor
+        // de campos desabilitados antes da validação) — deixando "Outra"
+        // sem nome preenchido cai no rótulo genérico "Outra" (ver itemTitle).
+        { key: 'outraNome', label: 'Nome da rede', type: 'text', placeholder: 'ex.: ResearchGate, Academia.edu, ORCID', disabledWhen: { field: 'titulo', notEquals: 'Outra' } },
+        { key: 'url', label: 'Link (URL)', type: 'text', required: true, placeholder: 'https://...' }] },
     CONEXAO_PROFISSIONAL: { label: 'Redes profissionais', noExport: true, noEvidence: true, naoLattes: true, fields: [
         { key: 'titulo', label: 'Plataforma / Tipo', type: 'text', required: true, placeholder: 'ex.: LinkedIn, E-mail profissional, Site pessoal' },
         { key: 'url', label: 'Link / URL (ou e-mail)', type: 'text', required: true, placeholder: 'https://...  ou  nome@dominio' },
@@ -1526,6 +1532,11 @@ window.LattesTypes = (function () {
                 const resto = [f.nivel, f.curso].map(x => String(x || '').trim()).filter(Boolean).join(' · ');
                 const t = [periodo, resto].filter(Boolean).join(' ');
                 if (t) return t;
+            }
+            // Redes acadêmicas: com "Outra" escolhida, mostra o nome digitado
+            // em "Nome da rede" em vez do rótulo genérico "Outra".
+            if (item.typeKey === 'CONEXAO_ACADEMICA' && f.titulo === 'Outra') {
+                return String(f.outraNome || '').trim() || 'Outra';
             }
             // Áreas de atuação: hierarquia CNPq/CAPES (Grande área > Área > Subárea > Especialidade)
             if (item.typeKey === 'AREA_ATUACAO') {

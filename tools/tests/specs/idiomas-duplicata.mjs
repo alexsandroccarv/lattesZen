@@ -101,14 +101,17 @@ test('Idiomas: sem nenhum idioma cadastrado ainda, a lista não aparece', async 
     assert(escondida, 'Sem idiomas cadastrados, a lista não deveria aparecer');
 });
 
-test('Catalogar: observação sobre cursos (Formação complementar) e certificados de proficiência (Certificações) aparece entre Publicar e Anotações gerais', async ({ page, baseUrl }) => {
+test('Catalogar: observação sobre cursos (Formação complementar) e certificados de proficiência (Certificações) aparece SÓ em Idiomas, entre Publicar e Anotações gerais', async ({ page, baseUrl }) => {
     await seedCatalog(page, baseUrl, []);
     await abrirIdiomas(page);
+
+    const obs = page.locator('#idiomasObsEvidencia');
+    assert(!(await obs.evaluate((el) => el.classList.contains('hidden'))), 'Em Idiomas, a observação deveria estar visível');
 
     const ordem = await page.evaluate(() => {
         const panel = document.querySelector('#camposPanel');
         const html = panel.innerHTML;
-        return { idxViz: html.indexOf('id="visibilidadeBlock"'), idxObs: html.indexOf('Formação complementar'), idxNotas: html.indexOf('id="notasGerais"') };
+        return { idxViz: html.indexOf('id="visibilidadeBlock"'), idxObs: html.indexOf('id="idiomasObsEvidencia"'), idxNotas: html.indexOf('id="notasGerais"') };
     });
     assert(ordem.idxViz > -1 && ordem.idxObs > -1 && ordem.idxNotas > -1, 'Deveria haver o bloco de Publicar, a observação e o campo de Anotações gerais');
     assert(ordem.idxViz < ordem.idxObs && ordem.idxObs < ordem.idxNotas, 'A observação deveria ficar entre "Publicar" e "Anotações gerais"');
@@ -116,4 +119,17 @@ test('Catalogar: observação sobre cursos (Formação complementar) e certifica
     const texto = await page.$eval('#camposPanel', (el) => el.textContent);
     assert(/02 Formação.*Formação complementar/.test(texto.replace(/\s+/g, ' ')), 'Deveria orientar a usar "02 Formação → Formação complementar" para cursos');
     assert(/16 Certificações/.test(texto), 'Deveria orientar a usar "16 Certificações" para certificados de proficiência');
+});
+
+test('Catalogar: observação sobre cursos/certificações NÃO aparece em outros tipos (ex.: Prêmios)', async ({ page, baseUrl }) => {
+    await seedCatalog(page, baseUrl, []);
+    await page.click('[data-tab="catalogar"]');
+    await page.waitForTimeout(150);
+    await page.selectOption('#selCategoria', 'DADOS_GERAIS');
+    await page.waitForTimeout(150);
+    await page.selectOption('#selTipo', 'PREMIO');
+    await page.waitForTimeout(150);
+
+    const obs = page.locator('#idiomasObsEvidencia');
+    assert(await obs.evaluate((el) => el.classList.contains('hidden')), 'Fora de Idiomas, a observação não deveria aparecer');
 });

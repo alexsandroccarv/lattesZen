@@ -664,7 +664,7 @@ window.TabCatalogar = (function () {
                 <div id="visibilidadeBlock" class="space-y-3"></div>
                 <div id="rscBlock" class="space-y-3"></div>
 
-                <p class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5">
+                <p id="idiomasObsEvidencia" class="hidden text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-1.5">
                     <i aria-hidden="true" class="fa-solid fa-circle-info mr-1"></i> Para cadastrar a evidência de <strong>cursos</strong>, use o tipo <strong>02 Formação → Formação complementar</strong>; para <strong>certificados de proficiência</strong>, use <strong>16 Certificações</strong>.
                 </p>
 
@@ -788,6 +788,8 @@ window.TabCatalogar = (function () {
             $('#dynFields').innerHTML = dynFieldsHtml(camposParaRenderizar, vals);
             associateLabels($('#dynFields'));           // a11y: label for/id + aria-required
             renderIdiomasCadastradosBlock(def, item);
+            const obsEvidencia = $('#idiomasObsEvidencia');
+            if (obsEvidencia) obsEvidencia.classList.toggle('hidden', !(def && def.key === 'IDIOMAS'));
             if (def && def.fields.some(f => f.type === 'areatree')) wireAreaTree($('#dynFields'), vals);
             wireValidators($('#dynFields'));             // ISSN/ISBN/DOI/URL
             wireCounters($('#dynFields'));               // contador de textareas
