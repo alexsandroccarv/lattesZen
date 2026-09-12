@@ -1161,6 +1161,30 @@ window.TabConfig = (function () {
         });
     }
 
+    /* --------------------- Configuração da Súmula FAPESP -------------------- */
+    // Mesmo mecanismo do RSC acima: aqui só o habilitar/desabilitar do
+    // módulo — os links (ORCID/Lattes/Web of Science/Google Scholar) e o
+    // texto da súmula ficam na própria aba Súmula FAPESP (ver tab-sumula.js).
+    function sumulaSectionHtml() {
+        return `<section id="sumulaSection" class="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <h2 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fa-solid fa-file-lines text-govbr-600 dark:text-unifesp-400"></i> Súmula Curricular FAPESP (opcional)</h2>
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Gera, a partir do catálogo, uma base de texto organizada no modelo de Súmula Curricular exigido pela FAPESP em processos de bolsas/auxílios (não é um documento oficial pronto para submissão — é um ponto de partida a revisar e ajustar). Quando habilitado, surge a aba <strong>Súmula FAPESP</strong>.</p>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" id="sumulaEnable" ${state.sumulaEnabled ? 'checked' : ''}>
+                <span>Habilitar módulo <strong>Súmula Curricular FAPESP</strong></span>
+            </label>
+        </section>`;
+    }
+    function wireSumulaConfig() {
+        const en = $('#sumulaEnable'); if (!en) return;
+        en.addEventListener('change', () => {
+            state.sumulaEnabled = en.checked;
+            const s = Storage.loadSettings(); s.sumulaEnabled = state.sumulaEnabled; Storage.saveSettings(s);
+            window.AppCore.applySumulaVisibility();
+            toast(state.sumulaEnabled ? 'Módulo Súmula Curricular FAPESP habilitado.' : 'Módulo Súmula Curricular FAPESP desabilitado.', 'ok');
+        });
+    }
+
     // Mesmo mecanismo do RSC acima (checkbox mostra/oculta a aba), só que a
     // aba Publicar na Web já existia antes deste toggle — por isso o padrão
     // é habilitada, não escondida (ver comentário em app-core.js/state.pubWebEnabled).
@@ -1610,6 +1634,7 @@ window.TabConfig = (function () {
 
                 ${cfgGroup(CFG_GROUPS[3])}
                 ${rscSectionHtml()}
+                ${sumulaSectionHtml()}
                 ${pubWebSectionHtml()}
                 ${nuvemPalavrasSectionHtml()}
 
@@ -1672,6 +1697,7 @@ window.TabConfig = (function () {
         wireThemeSection();
         wirePerfilSection();
         wireRscConfig();
+        wireSumulaConfig();
         wirePubWebConfig();
         wireNuvemPalavrasSection();
         wireExportLattes();
@@ -1825,7 +1851,7 @@ window.TabConfig = (function () {
         $('#btnExport').addEventListener('click', exportCatalog);
         $('#importJson').addEventListener('change', importCatalog);
         $('#btnClear').addEventListener('click', () => {
-            if (!confirm('Isto apaga TODO o índice local no navegador — itens catalogados, rascunho, prévia de importação, listas de autocomplete e a configuração do RSC-PCCTAE. Os arquivos no diretório NÃO são removidos. Continuar?')) return;
+            if (!confirm('Isto apaga TODO o índice local no navegador — itens catalogados, rascunho, prévia de importação, listas de autocomplete e as configurações do RSC-PCCTAE e da Súmula FAPESP. Os arquivos no diretório NÃO são removidos. Continuar?')) return;
             state.items = [];
             window.AppCore.saveCatalog();
             window.AppCore.clearDraft();                 // rascunho não salvo (lz_draft)
@@ -1836,10 +1862,12 @@ window.TabConfig = (function () {
             state.evEditing = [];         // evidências em edição
             state.vocab = {};             // listas de autocomplete (curadas)
             state.rscCfg = {};            // configuração do RSC-PCCTAE
-            // Persiste a limpeza das listas e do RSC nas configurações.
-            const s = Storage.loadSettings(); s.vocab = {}; s.rsc = {}; Storage.saveSettings(s);
+            state.sumulaCfg = {};         // configuração da Súmula FAPESP
+            state.sumulaTexto = '';       // texto da Súmula FAPESP
+            // Persiste a limpeza das listas, do RSC e da Súmula nas configurações.
+            const s = Storage.loadSettings(); s.vocab = {}; s.rsc = {}; s.sumula = {}; s.sumulaTexto = ''; Storage.saveSettings(s);
             window.AppCore.resetBackupReminder();        // zera o contador de backup
-            toast('Índice local limpo (itens, listas e RSC).', 'ok');
+            toast('Índice local limpo (itens, listas, RSC e Súmula FAPESP).', 'ok');
             window.AppCore.renderItemList();
             render();               // re-renderiza a aba (Perfil, listas, RSC, contadores)
         });
@@ -2002,6 +2030,10 @@ window.TabConfig = (function () {
                 state.rscEnabled = !!merged.rscEnabled;
                 state.rscCfg = merged.rsc || {};
                 window.AppCore.applyRscVisibility();
+                state.sumulaEnabled = !!merged.sumulaEnabled;
+                state.sumulaCfg = merged.sumula || {};
+                state.sumulaTexto = merged.sumulaTexto || '';
+                window.AppCore.applySumulaVisibility();
                 state.pubWebEnabled = merged.pubWebEnabled !== false;
                 window.AppCore.applyPublicarVisibility();
                 restaurouConfig = true;

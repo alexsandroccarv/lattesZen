@@ -36,6 +36,9 @@ window.AppCore = (function () {
         pubWebEnabled: true,
         rscCfg: {},         // dados funcionais do servidor (cargo, escolaridade, etc.)
         rscMemorialTexto: '', // texto final do memorial (gerado por IA ou editado manualmente)
+        sumulaEnabled: false, // módulo Súmula Curricular FAPESP habilitado? (mesmo padrão do RSC acima)
+        sumulaCfg: {},      // links (ORCID/Lattes/Web of Science/Google Scholar) da Súmula
+        sumulaTexto: '',    // texto final da Súmula Curricular (modelo automático ou editado manualmente)
         nuvemExclusao: [],  // Linha do tempo: palavras que nunca devem aparecer na nuvem
         nuvemCompostas: [], // Linha do tempo: termos de mais de uma palavra tratados como um só (ex.: "tech talks")
         dirHealth: null,    // último resultado de Storage.checkHealth() (null = sem pasta/não verificado)

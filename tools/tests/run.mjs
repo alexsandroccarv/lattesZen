@@ -61,6 +61,9 @@ import './specs/catalogar-botoes-evidencia.mjs';
 import './specs/config-xml-lattes.mjs';
 import './specs/tema.mjs';
 import './specs/config-reorganizacao.mjs';
+import './specs/sumula-config-campos.mjs';
+import './specs/sumula.mjs';
+import './specs/sumula-docx.mjs';
 
 console.log('Rodando suíte de testes de regressão (Playwright)...\n');
 await runAll();

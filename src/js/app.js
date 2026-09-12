@@ -393,7 +393,7 @@
        ===================================================================== */
     const RENDERERS = {
         inicio: TabInicio.render, catalogar: TabCatalogar.render, conformidade: TabConformidade.render,
-        linhatempo: TabLinhaTempo.render, publicar: TabPublicar.render, rsc: TabRsc.render, config: TabConfig.render,
+        linhatempo: TabLinhaTempo.render, publicar: TabPublicar.render, rsc: TabRsc.render, sumula: TabSumula.render, config: TabConfig.render,
     };
     // Mostra/oculta a aba RSC conforme o módulo esteja habilitado
     function applyRscVisibility() {
@@ -402,6 +402,13 @@
     }
     // Publicado em AppCore para tab-config.js — mesmo motivo de uid/nowISO.
     window.AppCore.applyRscVisibility = applyRscVisibility;
+    // Mostra/oculta a aba Súmula FAPESP conforme o módulo esteja habilitado
+    // (mesmo mecanismo do RSC acima).
+    function applySumulaVisibility() {
+        const btn = $('.tab-btn[data-tab="sumula"]');
+        if (btn) btn.classList.toggle('hidden', !state.sumulaEnabled);
+    }
+    window.AppCore.applySumulaVisibility = applySumulaVisibility;
     // Mostra/oculta a aba Publicar na Web conforme o toggle em Configurações
     // (mesmo mecanismo do RSC acima).
     function applyPublicarVisibility() {
@@ -588,6 +595,9 @@
         state.rscEnabled = !!cfg.rscEnabled;
         state.rscCfg = cfg.rsc || {};
         state.rscMemorialTexto = cfg.rscMemorialTexto || '';
+        state.sumulaEnabled = !!cfg.sumulaEnabled;
+        state.sumulaCfg = cfg.sumula || {};
+        state.sumulaTexto = cfg.sumulaTexto || '';
         state.nuvemExclusao = Array.isArray(cfg.nuvemExclusao) ? cfg.nuvemExclusao : [];
         state.nuvemCompostas = Array.isArray(cfg.nuvemCompostas) ? cfg.nuvemCompostas : [];
         // Diferente do RSC (opt-in, default false): a aba Publicar na Web já
@@ -597,6 +607,7 @@
         const { conexoesMigradas, pastasParaMover } = migrarItens();
         updateHeaderIdentity();
         applyRscVisibility();
+        applySumulaVisibility();
         applyPublicarVisibility();
         try { await Storage.restoreDirectory(); } catch (_) {}
         try { await checkDirHealth(); } catch (_) {} // silencioso: sem pedir permissão de novo sem um clique do usuário
